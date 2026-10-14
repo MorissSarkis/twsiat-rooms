@@ -5,7 +5,8 @@
 create or replace function public.protect_profile_fields() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if coalesce(public.my_role(), 'client') not in ('manager','admin') then
+  -- auth.uid() is null for dashboard / service-key changes: allowed
+  if auth.uid() is not null and coalesce(public.my_role(), 'client') not in ('manager','admin') then
     if new.role is distinct from old.role
        or new.ib_verified is distinct from old.ib_verified
        or new.room is distinct from old.room

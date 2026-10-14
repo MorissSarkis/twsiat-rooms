@@ -1,7 +1,7 @@
 -- Run AFTER you have signed up on the site once.
 -- 1) Make yourself admin (change the email):
 update public.profiles set role = 'admin', ib_verified = true, room = 2, balance_usd = 5000
-where id = (select id from auth.users where email = 'YOUR-EMAIL@example.com');
+where id = (select id from auth.users order by created_at limit 1);  -- first account = owner
 
 -- 2) First real engine suggestion — gold, 14 Oct 2026 (server time GMT):
 insert into public.suggestions
