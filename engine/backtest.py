@@ -30,7 +30,7 @@ def run(m5):
         if i0 >= len(T):
             break
         sug = R.engine_suggestion(ctx, O[i0])
-        if sug is None:
+        if sug is None or not R.confirm_fill(sug.side, pd.Timestamp(T[i0]), h1):  # H1 checked when the suggestion is made
             continue
         buy = sug.side == 'BUY'
         lim = np.datetime64(sug.expires_at)
@@ -39,7 +39,7 @@ def run(m5):
             if buy and L[j] + SP[j] <= sug.entry: fill = j; break
             if (not buy) and H[j] >= sug.entry: fill = j; break
             j += 1
-        if fill is None or not R.confirm_fill(sug.side, pd.Timestamp(T[fill]), h1):
+        if fill is None:
             continue
         res = R.track(sug.side, sug.entry, sug.stop_loss, sug.tp1, sug.tp2, m5, fill)
         out.append(dict(day=str(day.date()), side=sug.side, entry=sug.entry,

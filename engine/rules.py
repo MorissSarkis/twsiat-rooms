@@ -3,7 +3,7 @@ Twsiat Rooms — signal rules (Phase 1 result, gold only).
 
 Validated on XAUUSD M5, Jan 2020 – Oct 2026 (chosen on 2020–23, confirmed on 2024–26):
   - Direction: daily trend (previous daily close vs 50-day SMA) AND
-               H1 trend (EMA50 vs EMA200) must agree with the trade.
+               H1 trend (EMA50 vs EMA200, at the first bar of the day) must agree with the trade.
   - Entry:     pending order at the daily classic pivot P (pullback with the trend).
   - Stop:      0.7 x ATR(14, daily) from entry.
   - Targets:   TP1 = 1R, TP2 = 3R. Management: half at TP1, stop to entry, rest to TP2.
@@ -106,7 +106,7 @@ class Suggestion:
 
 def engine_suggestion(ctx: Context, day_open: float, symbol='XAUUSD') -> Suggestion | None:
     """Daily suggestion at the pivot, in the direction of the daily trend.
-    The H1 condition is checked again at fill time (see confirm_fill)."""
+    The H1 condition is checked at the first bar of the day (see confirm_fill)."""
     buy = ctx.daily_up
     E = ctx.P
     if buy and day_open <= E:      # must be a pullback (limit order below price)

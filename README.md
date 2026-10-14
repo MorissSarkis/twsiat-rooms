@@ -15,15 +15,18 @@ is tracked automatically against live prices.
 
 ## Phase 1 result (gold, Jan 2020 – Oct 2026, M5, Exness prices, spread included)
 
-Rules (`engine/rules.py`): daily trend (close vs SMA50) + H1 trend (EMA50 vs EMA200) must agree;
+Rules (`engine/rules.py`, same logic in the database: `db/004_engine.sql`): daily trend (close vs SMA50) + H1 trend (EMA50 vs EMA200, checked when the suggestion is made) must agree;
 pending entry at the daily pivot P; stop 0.7 × daily ATR; TP1 = 1R, TP2 = 3R; pending order expires 20:00 GMT.
 
 | Client style | Trades | Win % | Avg R | Total R | Max drawdown |
 |---|---|---|---|---|---|
-| Half at TP1, stop to entry, rest to TP2 | 645 (~98/yr) | 52.6% | +0.094 | +60.6 | 15.3R |
-| TP1 only | 645 | 52.6% | +0.054 | +35.1 | 19.9R |
+| Half at TP1, stop to entry, rest to TP2 | 641 (~95/yr) | 52.7% | +0.096 | +61.6 | 14.9R |
+| TP1 only | 641 | 52.7% | +0.058 | +37.0 | 19.9R |
 
-By year (half/BE/TP2): 2020 −5 · 2021 +8 · 2022 0 · 2023 +19 · 2024 +5 · 2025 +27 · 2026 +7 (R).
+By year (half/BE/TP2): 2020 −4 · 2021 +7 · 2022 +1 · 2023 +19 · 2024 +5 · 2025 +27 · 2026 +7 (R).
+
+The database engine (`db/004_engine.sql`) was checked against this backtest on a local Postgres:
+639 closed trades identical (side, entry, result to 0.01R).
 
 Reproduce: `python engine/backtest.py XAUUSDm_M5.csv` (MT5 "Export Bars" file).
 
