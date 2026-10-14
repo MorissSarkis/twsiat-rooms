@@ -5,7 +5,7 @@ import { approveSuggestion, rejectSuggestion, verifyClient } from './actions';
 
 export const dynamic = 'force-dynamic';
 
-const RULE_AR = { daily_trend: 'الاتجاه اليومي', h1_trend: 'اتجاه الساعة', entry_at_pivot: 'الدخول على البيفوت', stop_atr: 'حجم الستوب', stop_size: 'حجم الستوب', tp1_distance: 'مسافة الهدف 1', levels_order: 'ترتيب المستويات', news: 'الأخبار' };
+const RULE_AR = { daily_trend: 'الاتجاه اليومي', h1_trend: 'اتجاه الساعة', entry_at_pivot: 'الدخول على البيفوت', stop_atr: 'حجم الستوب', stop_size: 'حجم الستوب', tp1_distance: 'مسافة الهدف 1', levels_order: 'ترتيب المستويات', news: 'الأخبار', analyst_note: 'ملاحظة المحلل' };
 
 export default async function Admin() {
   const { sb, profile } = await currentUser();
@@ -13,17 +13,33 @@ export default async function Admin() {
     return (<><TopBar profile={profile} /><main className="wrap"><div className="card">هالصفحة للفريق بس.</div></main></>);
   }
   const canDecide = ['manager', 'admin'].includes(profile.role);
-  const [{ data: pending }, { data: queue }, { data: recent }] = await Promise.all([
+  const [{ data: pending }, { data: queue }, { data: recent }, { data: log }] = await Promise.all([
     sb.from('suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
     sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at').eq('ib_verified', false).not('activation_requested_at', 'is', null).order('activation_requested_at'),
     sb.from('signals').select('*').order('published_at', { ascending: false }).limit(20),
+    sb.from('engine_log').select('*').order('t', { ascending: false }).limit(5),
   ]);
 
   return (
     <>
       <TopBar profile={profile} />
       <main className="wrap grid">
-        <h1>الباك أوفيس</h1>
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <h1>الباك أوفيس</h1>
+          <a className="btn" href="/admin/new">+ توصية من المحلل</a>
+        </div>
+
+        {log && log.length > 0 && (
+          <div className="note">
+            <b>السيستم اليوم:</b>{' '}
+            {log[0].msg === 'suggestion created' ? 'طلّع اقتراح، شوفه تحت.'
+              : log[0].msg.includes('H1') ? 'ما في صفقة: اتجاه الساعة عكس الاتجاه اليومي.'
+              : log[0].msg.includes('beyond') ? 'ما في صفقة: السوق فتح بعد نقطة البيفوت.'
+              : log[0].msg.includes('history') ? 'ما في بيانات أسعار كافية لسا (جسر الأسعار).'
+              : log[0].msg}
+            <span className="muted ltr"> · {new Date(log[0].t).toISOString().slice(0, 16).replace('T', ' ')} GMT</span>
+          </div>
+        )}
 
         <h2>اقتراحات بانتظار الموافقة ({pending?.length || 0})</h2>
         {(!pending || pending.length === 0) && <div className="card muted">ما في اقتراحات جديدة.</div>}
