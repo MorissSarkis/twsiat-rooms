@@ -1,0 +1,5 @@
+__pycache__/
+*.csv
+.env*
+node_modules/
+.next/
