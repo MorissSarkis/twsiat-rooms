@@ -158,3 +158,29 @@ create policy "community post" on public.community_trades for insert with check 
 
 -- prices: readable by signed-in users (writes only via the service key)
 create policy "prices read" on public.prices_m5 for select using (auth.uid() is not null);
+
+-- ---------- New user -> profile row ----------
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)));
+  return new;
+end $$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ---------- API grants ----------
+-- "Automatically expose new tables" is OFF in this project, so each table is granted explicitly.
+-- Row-level security above still decides which rows each user can see.
+grant usage on schema public to anon, authenticated;
+grant select, insert            on public.profiles         to authenticated;
+grant select, insert            on public.consents         to authenticated;
+grant select, insert, update    on public.suggestions      to authenticated;
+grant select                    on public.signals          to authenticated;
+grant select, insert            on public.community_trades to authenticated;
+grant select                    on public.prices_m5        to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+grant execute on function public.my_role() to authenticated;
