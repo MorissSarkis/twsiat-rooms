@@ -19,6 +19,10 @@ export default async function Admin() {
     sb.from('signals').select('*').order('published_at', { ascending: false }).limit(20),
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(5),
   ]);
+  const live = Object.fromEntries(await Promise.all((pending || []).map(async (s) => {
+    const { data } = await sb.rpc('suggestion_live_check', { p_id: s.id });
+    return [s.id, data || { ok: true }];
+  })));
 
   return (
     <>
@@ -70,6 +74,12 @@ export default async function Admin() {
                 <tr key={i}><td className={r.ok ? 'ok' : 'bad'}>{r.ok ? '✓' : '✗'}</td><td>{RULE_AR[r.rule] || r.rule}</td><td className="muted">{r.detail}</td></tr>
               ))}
             </tbody></table>
+            {live[s.id] && !live[s.id].ok && (
+              <div className="err">ما بينفع تنشرها هلق: {live[s.id].reason}</div>
+            )}
+            {live[s.id]?.ok && live[s.id].price != null && (
+              <div className="muted">السعر الآن <b className="ltr">{fmt(live[s.id].price)}</b> · الدخول لسا متاح ✓</div>
+            )}
             {canDecide ? (
               <div className="grid g2">
                 <form action={approveSuggestion} className="grid">
@@ -78,7 +88,7 @@ export default async function Admin() {
                     <label className="row" style={{ flexDirection: 'row' }}><input type="checkbox" name="rooms" value="1" defaultChecked style={{ height: 18 }} /> غرفة 1</label>
                     <label className="row" style={{ flexDirection: 'row' }}><input type="checkbox" name="rooms" value="2" defaultChecked style={{ height: 18 }} /> غرفة 2</label>
                   </div>
-                  <button className="btn green">وافق وانشر</button>
+                  <button className="btn green" disabled={live[s.id] && !live[s.id].ok} style={live[s.id] && !live[s.id].ok ? { opacity: 0.4 } : undefined}>وافق وانشر</button>
                 </form>
                 <form action={rejectSuggestion} className="grid">
                   <input type="hidden" name="id" value={s.id} />

@@ -16,6 +16,8 @@ export async function approveSuggestion(formData) {
   const rooms = formData.getAll('rooms').map(Number);
   const { data: s } = await sb.from('suggestions').select('*').eq('id', id).single();
   if (!s || s.status !== 'pending' || rooms.length === 0) return;
+  const { data: chk } = await sb.rpc('suggestion_live_check', { p_id: id });
+  if (chk && !chk.ok) { revalidatePath('/admin'); return; }   // entry already reached: never publish a stale order
   await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: String(formData.get('note') || '') }).eq('id', id);
   await sb.from('signals').insert({
     suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
