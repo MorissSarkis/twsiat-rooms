@@ -14,7 +14,7 @@ export async function middleware(request) {
   });
   const { data: { user } } = await sb.auth.getUser();
   const p = request.nextUrl.pathname;
-  if (!user && (p.startsWith('/rooms') || p.startsWith('/admin'))) {
+  if (!user && ['/rooms', '/admin', '/community', '/levels'].some((x) => p.startsWith(x))) {
     const url = request.nextUrl.clone(); url.pathname = '/login'; return NextResponse.redirect(url);
   }
   return response;

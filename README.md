@@ -37,3 +37,6 @@ Reproduce: `python engine/backtest.py XAUUSDm_M5.csv` (MT5 "Export Bars" file).
 - Room 1 is not forced onto cent accounts; the client must accept a risk disclaimer to enter.
 - Engine suggestions and analyst signals both go through the checker; an account manager approves before publishing.
 - Clients may take TP1 only, or half at TP1 and the rest to TP2; the record shows both results.
+- Telegram channel gets alerts without price levels (levels stay inside the rooms).
+- Community room: ideas posted only through `community_post()` (server price and time, no edits or deletes), tracked on the same M5 prices; ranking starts after 20 closed trades.
+- Levels page: classic pivots (R1–R3, S1–S3), previous-day range, Fibonacci of that range in the trend direction, ATR, daily and H1 trend.
