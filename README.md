@@ -30,6 +30,21 @@ The database engine (`db/004_engine.sql`) was checked against this backtest on a
 
 Reproduce: `python engine/backtest.py XAUUSDm_M5.csv` (MT5 "Export Bars" file).
 
+## Other instruments (same rules, no re-tuning; Jan 2020 – Oct 2026, Exness M5, spread included)
+
+| Instrument | Trades | Win % | Avg R (half/BE/TP2) | 2020–23 | 2024–26 | Max DD | Engine |
+|---|---|---|---|---|---|---|---|
+| XAUUSD | 641 | 52.7 | +0.096 | +0.061 | +0.148 | 14.9R | yes |
+| BTCUSD | 793 | 52.2 | +0.070 | +0.063 | +0.079 | 21.7R | yes (db/011) |
+| USDCAD | 529 | 50.9 | +0.025 | +0.019 | +0.032 | 32.9R | no — edge too small |
+| USDJPY | 665 | 49.0 | +0.020 | +0.015 | +0.025 | 33.4R | no — edge too small |
+| USOIL | 558 | 51.1 | +0.014 | −0.003 | +0.040 | 26.2R | no |
+| XAGUSD | 617 | 48.1 | −0.002 | +0.051 | −0.076 | 40.6R | no |
+| EURUSD | 586 | 50.3 | −0.026 | −0.063 | +0.029 | 31.3R | no |
+| AUDUSD | 559 | 45.4 | −0.090 | −0.048 | −0.141 | 65.1R | no |
+
+Rule to join the engine: average ≥ +0.05R in both 2020–23 and 2024–26. Indices, ETH, GBPUSD, USDCHF: not enough M5 history at Exness yet.
+
 ## Decisions (Oct 2026)
 
 - Rooms: room 1 = accounts under $1,000, room 2 = $1,000 and above, room 3 = community.

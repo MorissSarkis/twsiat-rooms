@@ -17,7 +17,7 @@ def load_mt5_export(path):
     return df[['t', 'open', 'high', 'low', 'close', 'spread']].reset_index(drop=True)
 
 
-def run(m5):
+def run(m5, digits=2):
     daily = R.daily_bars(m5)
     h1 = R.h1_trend(m5)
     T = m5.t.values; O = m5.open.values; H = m5.high.values; L = m5.low.values; SP = m5.spread.values
@@ -29,7 +29,7 @@ def run(m5):
         i0 = np.searchsorted(T, np.datetime64(day))
         if i0 >= len(T):
             break
-        sug = R.engine_suggestion(ctx, O[i0])
+        sug = R.engine_suggestion(ctx, O[i0], digits=digits)
         if sug is None or not R.confirm_fill(sug.side, pd.Timestamp(T[i0]), h1):  # H1 checked when the suggestion is made
             continue
         buy = sug.side == 'BUY'

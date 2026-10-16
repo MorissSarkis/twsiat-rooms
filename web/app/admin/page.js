@@ -1,6 +1,6 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { fmt, STATE_AR } from '@/lib/format';
+import { symName, fmt, STATE_AR } from '@/lib/format';
 import { approveSuggestion, rejectSuggestion, verifyClient } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,7 @@ export default async function Admin() {
     sb.from('suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
     sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at').eq('ib_verified', false).not('activation_requested_at', 'is', null).order('activation_requested_at'),
     sb.from('signals').select('*').order('published_at', { ascending: false }).limit(20),
-    sb.from('engine_log').select('*').order('t', { ascending: false }).limit(5),
+    sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
   const live = Object.fromEntries(await Promise.all((pending || []).map(async (s) => {
     const { data } = await sb.rpc('suggestion_live_check', { p_id: s.id });
@@ -34,14 +34,19 @@ export default async function Admin() {
         </div>
 
         {log && log.length > 0 && (
-          <div className="note">
-            <b>السيستم اليوم:</b>{' '}
-            {log[0].msg === 'suggestion created' ? 'طلّع اقتراح، شوفه تحت.'
-              : log[0].msg.includes('H1') ? 'ما في صفقة: اتجاه الساعة عكس الاتجاه اليومي.'
-              : log[0].msg.includes('beyond') ? 'ما في صفقة: السوق فتح بعد نقطة البيفوت.'
-              : log[0].msg.includes('history') ? 'ما في بيانات أسعار كافية لسا (جسر الأسعار).'
-              : log[0].msg}
-            <span className="muted ltr"> · {new Date(log[0].t).toISOString().slice(0, 16).replace('T', ' ')} GMT</span>
+          <div className="note grid" style={{ gap: 4 }}>
+            <b>السيستم اليوم:</b>
+            {[...new Map(log.map((l) => [l.symbol, l])).values()].map((l) => (
+              <div key={l.symbol}>
+                <b>{symName(l.symbol)}:</b>{' '}
+                {l.msg === 'suggestion created' ? 'طلّع اقتراح، شوفه تحت.'
+                  : l.msg.includes('H1') ? 'ما في صفقة: اتجاه الساعة عكس الاتجاه اليومي.'
+                  : l.msg.includes('beyond') ? 'ما في صفقة: السوق فتح بعد نقطة البيفوت.'
+                  : l.msg.includes('history') ? 'ما في بيانات أسعار كافية لسا (جسر الأسعار).'
+                  : l.msg}
+                <span className="muted ltr"> · {new Date(l.t).toISOString().slice(0, 16).replace('T', ' ')} GMT</span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -51,7 +56,7 @@ export default async function Admin() {
           <div key={s.id} className="card grid">
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <div className="row">
-                <b>{s.symbol}</b>
+                <b>{symName(s.symbol)}</b>
                 <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
                 <span className="muted">{s.source === 'engine' ? 'من السيستم' : 'من المحلل'}</span>
               </div>

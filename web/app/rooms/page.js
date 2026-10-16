@@ -1,7 +1,7 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
-import { fmt, lotFor, STATE_AR, ROOM_AR } from '@/lib/format';
+import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
 import { requestActivation, acceptDisclaimer } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -89,7 +89,7 @@ export default async function Rooms() {
             <div key={s.id} className="card grid">
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <div className="row">
-                  <b>{s.symbol === 'XAUUSD' ? 'الذهب' : s.symbol}</b>
+                  <b>{symName(s.symbol)}</b>
                   <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
                   <span className="muted">{s.order_type.includes('LIMIT') ? 'أمر معلق' : s.order_type.includes('STOP') ? 'أمر ستوب' : 'بسعر السوق'}</span>
                 </div>

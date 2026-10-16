@@ -104,7 +104,7 @@ class Suggestion:
         d = asdict(self); d['expires_at'] = str(self.expires_at); return d
 
 
-def engine_suggestion(ctx: Context, day_open: float, symbol='XAUUSD') -> Suggestion | None:
+def engine_suggestion(ctx: Context, day_open: float, symbol='XAUUSD', digits: int = 2) -> Suggestion | None:
     """Daily suggestion at the pivot, in the direction of the daily trend.
     The H1 condition is checked at the first bar of the day (see confirm_fill)."""
     buy = ctx.daily_up
@@ -118,8 +118,8 @@ def engine_suggestion(ctx: Context, day_open: float, symbol='XAUUSD') -> Suggest
     return Suggestion(
         symbol=symbol, side='BUY' if buy else 'SELL',
         order_type='BUY_LIMIT' if buy else 'SELL_LIMIT',
-        entry=round(E, 2), stop_loss=round(E - s * sld, 2),
-        tp1=round(E + s * CONFIG['tp1_r'] * sld, 2), tp2=round(E + s * CONFIG['tp2_r'] * sld, 2),
+        entry=round(E, digits), stop_loss=round(E - s * sld, digits),
+        tp1=round(E + s * CONFIG['tp1_r'] * sld, digits), tp2=round(E + s * CONFIG['tp2_r'] * sld, digits),
         expires_at=ctx.day + pd.Timedelta(hours=CONFIG['expiry_hour']),
         risk_usd_001=round(sld * CONFIG['usd_per_point_001'][symbol], 1),
         reasons=[
