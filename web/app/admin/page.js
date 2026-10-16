@@ -16,9 +16,10 @@ export default async function Admin() {
   const [{ data: pending }, { data: queue }, { data: recent }, { data: log }] = await Promise.all([
     sb.from('suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
     sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at').eq('ib_verified', false).not('activation_requested_at', 'is', null).order('activation_requested_at'),
-    sb.from('signals').select('*').order('published_at', { ascending: false }).limit(20),
+    sb.from('signals').select('*').eq('shadow', false).order('published_at', { ascending: false }).limit(20),
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
+  const { data: shadow } = await sb.rpc('shadow_stats');
   const live = Object.fromEntries(await Promise.all((pending || []).map(async (s) => {
     const { data } = await sb.rpc('suggestion_live_check', { p_id: s.id });
     return [s.id, data || { ok: true }];
@@ -48,6 +49,42 @@ export default async function Admin() {
               </div>
             ))}
           </div>
+        )}
+
+        {shadow && shadow.length > 0 && (
+          <>
+            <h2>وضع تجريبي (ما بيوصل للعملاء)</h2>
+            {shadow.map((sh) => (
+              <div key={sh.symbol} className="card grid">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <b>{symName(sh.symbol)} · عكس ترند {symName(sh.ref)}</b>
+                  <span className="muted">بيتسجّل وبيتتابع، بدون نشر ولا تيليغرام</span>
+                </div>
+                <table><tbody>
+                  <tr><td></td><td className="muted">الاختبار التاريخي</td><td className="muted">الأداء الحقيقي لهلأ</td></tr>
+                  <tr><td>صفقات</td><td>{sh.expected?.sample}</td><td>{sh.live?.closed} مسكّرة من {sh.live?.signals}</td></tr>
+                  <tr><td>نسبة النجاح</td><td>{fmt(sh.expected?.win_rate, 1)}%</td><td>{sh.live?.win_rate == null ? '—' : `${fmt(sh.live.win_rate, 1)}%`}</td></tr>
+                  <tr><td>متوسط R</td><td className="ltr">+{fmt(sh.expected?.avg_r, 3)}</td><td className="ltr">{sh.live?.avg_r == null ? '—' : fmt(sh.live.avg_r, 3)}</td></tr>
+                  <tr><td>مجموع R</td><td></td><td className="ltr">{fmt(sh.live?.total_r, 2)}</td></tr>
+                </tbody></table>
+                {sh.recent?.length > 0 && (
+                  <table>
+                    <thead><tr><th>التاريخ</th><th>الاتجاه</th><th>الدخول</th><th>الستوب</th><th>الحالة</th><th>R</th></tr></thead>
+                    <tbody>{sh.recent.map((r) => (
+                      <tr key={r.id}>
+                        <td className="ltr">{new Date(r.published_at).toISOString().slice(0, 10)}</td>
+                        <td>{r.side === 'BUY' ? 'شراء' : 'بيع'}</td>
+                        <td className="ltr">{r.entry}</td><td className="ltr">{r.stop_loss}</td>
+                        <td>{STATE_AR[r.state] || r.state}</td>
+                        <td className="ltr">{r.result_r_partial == null ? '—' : fmt(r.result_r_partial, 2)}</td>
+                      </tr>))}
+                    </tbody>
+                  </table>
+                )}
+                <div className="muted">بعد 2–3 أشهر، إذا الأداء الحقيقي قريب من الاختبار، منضيفه للغرف.</div>
+              </div>
+            ))}
+          </>
         )}
 
         <h2>اقتراحات بانتظار الموافقة ({pending?.length || 0})</h2>
