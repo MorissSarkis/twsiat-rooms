@@ -24,7 +24,13 @@ export function PostForm({ symbols }) {
       <b>انشر فكرة صفقة</b>
       <div className="grid g2">
         <label>الأصل
-          <select name="symbol">{symbols.map((s) => <option key={s.code} value={s.code}>{s.name} {s.code}</option>)}</select>
+          <select name="symbol">
+            {[...new Set(symbols.map((s) => s.group || ''))].map((g) => (
+              <optgroup key={g} label={g}>
+                {symbols.filter((s) => (s.group || '') === g).map((s) => <option key={s.code} value={s.code}>{s.name} · {s.code}</option>)}
+              </optgroup>
+            ))}
+          </select>
         </label>
         <label>الاتجاه
           <select name="side" defaultValue="BUY"><option value="BUY">شراء</option><option value="SELL">بيع</option></select>

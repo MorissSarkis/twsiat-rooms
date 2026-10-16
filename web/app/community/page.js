@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { fmt, symName, ORDER_AR, CSTATE_AR, when } from '@/lib/format';
+import { fmt, ORDER_AR, CSTATE_AR, when } from '@/lib/format';
 import { UsernameForm, PostForm, CopyButton } from './forms';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,8 @@ function Record({ st }) {
   );
 }
 
-function Idea({ t, st }) {
+function Idea({ t, st, sym }) {
+  const d = sym?.digits ?? 2;
   const buy = t.side === 'BUY';
   const copy = `${t.symbol} ${t.side} ${t.order_type === 'MARKET' ? 'MARKET' : t.order_type.replace('_', ' ')} @ ${t.entry} | SL ${t.stop_loss} | TP ${t.take_profit}`;
   const live = t.state === 'waiting' || t.state === 'open';
@@ -31,14 +32,14 @@ function Idea({ t, st }) {
         <span className="muted ltr">{when(t.posted_at)}</span>
       </div>
       <div className="row">
-        <b>{symName(t.symbol)}</b>
+        <b>{sym?.name || t.symbol}</b> <span className="muted ltr">{t.symbol}</span>
         <span className={`badge ${buy ? 'buy' : 'sell'}`}>{buy ? 'شراء' : 'بيع'}</span>
         <span className="muted ltr">{ORDER_AR[t.order_type]}</span>
       </div>
       <div className="kv" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
-        <div><span className="muted">الدخول</span><b>{fmt(t.entry)}</b></div>
-        <div><span className="muted">وقف الخسارة</span><b className="bad">{fmt(t.stop_loss)}</b></div>
-        <div><span className="muted">الهدف</span><b className="ok">{fmt(t.take_profit)}</b></div>
+        <div><span className="muted">الدخول</span><b>{fmt(t.entry, d)}</b></div>
+        <div><span className="muted">وقف الخسارة</span><b className="bad">{fmt(t.stop_loss, d)}</b></div>
+        <div><span className="muted">الهدف</span><b className="ok">{fmt(t.take_profit, d)}</b></div>
       </div>
       {t.note && <div className="note">{t.note}</div>}
       <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -62,6 +63,7 @@ export default async function Community({ searchParams }) {
     sb.rpc('list_symbols'),
     tab === 'top' ? Promise.resolve({ data: [] }) : sb.rpc('community_feed', { p_limit: 60, p_username: searchParams?.u || null }),
   ]);
+  const symBy = Object.fromEntries((symbols || []).map((x) => [x.code, x]));
   const byUser = Object.fromEntries((stats || []).map((s) => [s.username, s]));
   const ranked = (stats || []).filter((s) => s.trades >= RANK_AFTER).sort((a, b) => Number(b.total_r) - Number(a.total_r));
   const rising = (stats || []).filter((s) => s.trades < RANK_AFTER && s.trades > 0).sort((a, b) => b.trades - a.trades);
@@ -122,7 +124,7 @@ export default async function Community({ searchParams }) {
         ) : (
           <div className="grid">
             {(!feed || feed.length === 0) && <div className="card muted">ما في أفكار لهلأ. كون أول واحد بينشر.</div>}
-            {feed?.map((t) => <Idea key={t.id} t={t} st={byUser[t.username]} />)}
+            {feed?.map((t) => <Idea key={t.id} t={t} st={byUser[t.username]} sym={symBy[t.symbol]} />)}
           </div>
         )}
 
