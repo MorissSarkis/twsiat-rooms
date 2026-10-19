@@ -57,6 +57,7 @@ export default async function Rooms() {
       <>
         <TopBar profile={profile} />
         <main className="wrap grid" style={{ maxWidth: 620 }}>
+          <div className="card hl"><b>تم تفعيل حسابك ✅</b><div className="muted" style={{ marginTop: 4 }}>أهلاً فيك! خطوة أخيرة وبتدخل غرفتك.</div></div>
           <h1>{ROOM_AR[room]}</h1>
           <div className="card grid">
             <b>قبل الدخول، اقرأ ووافق:</b>
