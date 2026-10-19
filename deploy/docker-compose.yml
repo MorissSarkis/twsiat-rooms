@@ -5,6 +5,7 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: https://iqkuyqvhsrzlnanltybu.supabase.co
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_bFGGkLFIOZYIfjbMrogW7g_Haw2W0zt
+        NEXT_PUBLIC_SITE_URL: https://rooms.twsiat.com
     restart: always
   caddy:
     image: caddy:2-alpine

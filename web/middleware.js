@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { siteOrigin } from './lib/origin';
 export async function middleware(request) {
   let response = NextResponse.next({ request });
   const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
@@ -15,7 +16,7 @@ export async function middleware(request) {
   const { data: { user } } = await sb.auth.getUser();
   const p = request.nextUrl.pathname;
   if (!user && ['/rooms', '/admin', '/community', '/levels'].some((x) => p.startsWith(x))) {
-    const url = request.nextUrl.clone(); url.pathname = '/login'; return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL('/login', siteOrigin(request)));
   }
   return response;
 }
