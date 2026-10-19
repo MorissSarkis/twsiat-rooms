@@ -21,7 +21,7 @@ export async function approveSuggestion(formData) {
   await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: String(formData.get('note') || '') }).eq('id', id);
   await sb.from('signals').insert({
     suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
-    entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at,
+    entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at, credit_username: s.credit_username,
   });
   revalidatePath('/admin');
 }
@@ -39,5 +39,11 @@ export async function verifyClient(formData) {
     ib_verified: true, balance_usd: balance, room: balance >= 1000 ? 2 : 1,
     verified_at: new Date().toISOString(), verified_by: user.id,
   }).eq('id', String(formData.get('id')));
+  revalidatePath('/admin');
+}
+
+export async function promoteCommunity(formData) {
+  const { sb } = await staff();
+  await sb.rpc('promote_community', { p_id: Number(formData.get('id')) });
   revalidatePath('/admin');
 }

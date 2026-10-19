@@ -90,6 +90,7 @@ export default async function Rooms() {
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <div className="row">
                   <b>{symName(s.symbol)}</b>
+                  {s.credit_username && <span className="muted">💡 فكرة من العضو <span className="ltr">@{s.credit_username}</span></span>}
                   <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
                   <span className="muted">{s.order_type.includes('LIMIT') ? 'أمر معلق' : s.order_type.includes('STOP') ? 'أمر ستوب' : 'بسعر السوق'}</span>
                 </div>

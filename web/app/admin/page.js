@@ -1,7 +1,7 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { symName, fmt, STATE_AR } from '@/lib/format';
-import { approveSuggestion, rejectSuggestion, verifyClient } from './actions';
+import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,7 @@ export default async function Admin() {
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
   const { data: shadow } = await sb.rpc('shadow_stats');
+  const { data: cands } = await sb.rpc('community_candidates', { p_min_trades: 20 });
   const live = Object.fromEntries(await Promise.all((pending || []).map(async (s) => {
     const { data } = await sb.rpc('suggestion_live_check', { p_id: s.id });
     return [s.id, data || { ok: true }];
@@ -95,7 +96,7 @@ export default async function Admin() {
               <div className="row">
                 <b>{symName(s.symbol)}</b>
                 <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
-                <span className="muted">{s.source === 'engine' ? 'من السيستم' : 'من المحلل'}</span>
+                <span className="muted">{s.source === 'engine' ? 'من السيستم' : s.source === 'community' ? <>فكرة من العضو <span className="ltr">@{s.credit_username}</span></> : 'من المحلل'}</span>
               </div>
               <b className={s.check_passed ? 'ok' : 'bad'}>{s.check_passed ? 'عدّت الفحص ✓' : 'ما عدّت الفحص ✗'}</b>
             </div>
@@ -141,6 +142,37 @@ export default async function Admin() {
             ) : <div className="muted">الموافقة لمدير الحساب.</div>}
           </div>
         ))}
+
+        {canDecide && cands && cands.length > 0 && (
+          <>
+            <h2>أفكار مرشّحة من المجتمع ({cands.filter((c) => !c.promoted).length})</h2>
+            <div className="muted">أوامر معلّقة لسا ما اتفعّلت، من أعضاء عندهم 20 فكرة مسكّرة أو أكتر ومتوسط R موجب.</div>
+            {cands.map((c) => (
+              <div key={c.id} className="card grid">
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <div className="row">
+                    <b className="ltr">@{c.username}</b>
+                    <span className="muted">{c.trades} فكرة · نجاح {fmt(c.win_rate, 0)}% · متوسط <span className="ltr">{fmt(c.avg_r, 2)}R</span></span>
+                  </div>
+                  <span className="muted ltr">{new Date(c.posted_at).toISOString().slice(0, 16).replace('T', ' ')}</span>
+                </div>
+                <div className="row">
+                  <b>{symName(c.symbol)}</b>
+                  <span className={`badge ${c.side === 'BUY' ? 'buy' : 'sell'}`}>{c.side === 'BUY' ? 'شراء' : 'بيع'}</span>
+                  <span className="muted ltr">{c.order_type}</span>
+                  <span className="ltr">@ {c.entry} · SL {c.stop_loss} · TP {c.take_profit}</span>
+                </div>
+                {c.note && <div className="note">{c.note}</div>}
+                {c.promoted ? <div className="muted">انرشّحت ✓ (شوفها بقائمة الموافقة)</div> : (
+                  <form action={promoteCommunity}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button className="btn ghost">رشّح للغرف (بتمر على الفحص والموافقة)</button>
+                  </form>
+                )}
+              </div>
+            ))}
+          </>
+        )}
 
         {canDecide && (
           <>
