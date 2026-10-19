@@ -53,3 +53,14 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:right}
   td,th{padding:7px 6px}
 }
 input[type=checkbox],input[type=radio]{width:auto;height:auto}
+.picker{display:grid;gap:8px}
+.cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (min-width:760px){.cats{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.cat{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.cat .muted{font-size:12px;font-weight:400}
+.cat .arrow{color:var(--gold);transition:transform .15s}
+.cat.open{border-color:var(--gold);background:var(--card2)}
+.cat.open .arrow{transform:rotate(180deg)}
+.cat.has{border-color:var(--gold)}
+.cat:disabled{opacity:.45;cursor:default}
+.panel{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}

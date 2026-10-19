@@ -1,6 +1,6 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import Link from 'next/link';
+import SymbolPicker from './picker';
 import { fmt, when } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +43,6 @@ export default async function Levels({ searchParams }) {
   const s = list.find((x) => x.code === searchParams?.s) || list[0];
   const { data: L } = s ? await sb.rpc('market_levels', { p_symbol: s.code }) : { data: null };
   const d = s?.digits ?? 2;
-  const groups = [...new Set(list.map((x) => x.group || ''))];
 
   return (
     <>
@@ -55,16 +54,7 @@ export default async function Levels({ searchParams }) {
           الاتجاه هو نفس الفلتر اللي بيستعمله نظام التوصيات.
         </div>
 
-        <div className="grid" style={{ gap: 8 }}>
-          {groups.map((g) => (
-            <div key={g} className="tabs" style={{ alignItems: 'center' }}>
-              {g && <span className="muted" style={{ minWidth: 56 }}>{g}</span>}
-              {list.filter((x) => (x.group || '') === g).map((x) => (
-                <Link key={x.code} href={`/levels?s=${x.code}`} className={x.code === s?.code ? 'on' : ''}>{x.name}</Link>
-              ))}
-            </div>
-          ))}
-        </div>
+        <SymbolPicker list={list} current={s?.code} />
 
         {!s || !L ? (
           <div className="card muted">ما في أسعار لهالأصل لهلأ.</div>
