@@ -3,10 +3,10 @@
     <h2 style="margin:0 0 12px;font-size:20px">تأكيد الإيميل الجديد</h2>
     <p style="font-size:15px;line-height:1.8;margin:0 0 20px">طلبت تغيير إيميل حسابك لـ {{ .NewEmail }}. اضغط على الزر للتأكيد.</p>
     <p style="text-align:center;margin:0 0 20px">
-      <a href="{{ .ConfirmationURL }}" style="background:#2e7d5b;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:16px;display:inline-block">أكّد الإيميل الجديد</a>
+      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change" style="background:#2e7d5b;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:16px;display:inline-block">أكّد الإيميل الجديد</a>
     </p>
     <p style="font-size:13px;color:#6b7280;line-height:1.7;margin:0">إذا ما طلبت أنت، تجاهل الرسالة.</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
-    <p style="font-size:12px;color:#9ca3af;margin:0">موقع توصيات · twsiat.com</p>
+    <p style="font-size:12px;color:#9ca3af;margin:0">موقع توصيات · twsiat.com<br>وصلتك هالرسالة لأنك سجّلت بغرفة التداول على rooms.twsiat.com</p>
   </div>
 </div>
