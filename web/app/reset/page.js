@@ -11,6 +11,7 @@ export default function Reset() {
   const [p2, setP2] = useState('');
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
 
   async function submit(e) {
     e.preventDefault(); setErr(null);
@@ -29,10 +30,13 @@ export default function Reset() {
       <h1 style={{ fontSize: 24, textAlign: 'center' }}>كلمة سر جديدة</h1>
       <form onSubmit={submit} className="card grid">
         <label>كلمة السر الجديدة
-          <input type="password" dir="ltr" value={p1} onChange={(e) => setP1(e.target.value)} required minLength={6} />
+          <div className="pw">
+            <input type={show ? 'text' : 'password'} dir="ltr" value={p1} onChange={(e) => setP1(e.target.value)} required minLength={6} autoComplete="new-password" />
+            <button type="button" className="eye" onClick={() => setShow(!show)}>{show ? 'إخفاء' : 'إظهار'}</button>
+          </div>
         </label>
         <label>أعد كتابتها
-          <input type="password" dir="ltr" value={p2} onChange={(e) => setP2(e.target.value)} required minLength={6} />
+          <input type={show ? 'text' : 'password'} dir="ltr" value={p2} onChange={(e) => setP2(e.target.value)} required minLength={6} autoComplete="new-password" />
         </label>
         {err && <div className="err">{err}</div>}
         <button className="btn" disabled={busy}>{busy ? '...' : 'احفظ وادخل'}</button>

@@ -1,5 +1,6 @@
 import { wa, BROKERS } from '@/lib/brand';
 import TopBar from '../TopBar';
+import TelegramPrompt from '../TelegramPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
 import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
@@ -10,6 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function Rooms() {
   const { sb, user, profile } = await currentUser();
   if (!profile) return null;
+  const { data: tgLink } = await sb.rpc('my_telegram_link');
 
   // 1) not verified yet → activation
   if (!profile.ib_verified) {
@@ -17,6 +19,7 @@ export default async function Rooms() {
       <>
         <TopBar profile={profile} />
         <main className="wrap grid" style={{ maxWidth: 560 }}>
+          <TelegramPrompt link={tgLink} />
           <h1>فعّل غرف الخبراء</h1>
           <div className="muted" style={{ lineHeight: 1.8 }}>
             غرف توصيات خبراء موقع توصيات متاحة لعملائنا. أدخل رقم حساب التداول مرة وحدة بس عشان نتأكد إنه مفتوح تحت وكالتنا.
@@ -57,6 +60,7 @@ export default async function Rooms() {
       <>
         <TopBar profile={profile} />
         <main className="wrap grid" style={{ maxWidth: 620 }}>
+          <TelegramPrompt link={tgLink} />
           <div className="card hl"><b>تم تفعيل حسابك ✅</b><div className="muted" style={{ marginTop: 4 }}>أهلاً فيك! خطوة أخيرة وبتدخل غرفتك.</div></div>
           <h1>{ROOM_AR[room]}</h1>
           <div className="card grid">
@@ -81,6 +85,7 @@ export default async function Rooms() {
     <>
       <TopBar profile={profile} />
       <main className="wrap grid">
+        <TelegramPrompt link={tgLink} />
         <div className="card hl">
           <div className="muted">غرفتك</div>
           <b style={{ fontSize: 17 }}>{ROOM_AR[room]}</b>

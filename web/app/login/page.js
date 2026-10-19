@@ -15,6 +15,7 @@ export default function Login() {
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
   useEffect(() => {
     if (new URLSearchParams(location.search).get('e') === 'link') setErr('رابط التفعيل انتهى أو استُعمل قبل. سجّل دخول، أو اطلب رابط جديد.');
   }, []);
@@ -79,7 +80,10 @@ export default function Login() {
           </label>
           {mode !== 'reset' && (
             <label>كلمة السر
-              <input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+              <div className="pw">
+                <input type={show ? 'text' : 'password'} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} />
+                <button type="button" className="eye" onClick={() => setShow(!show)} aria-label={show ? 'إخفاء كلمة السر' : 'إظهار كلمة السر'}>{show ? 'إخفاء' : 'إظهار'}</button>
+              </div>
             </label>
           )}
           {err && <div className="err">{err}</div>}

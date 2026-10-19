@@ -64,3 +64,7 @@ input[type=checkbox],input[type=radio]{width:auto;height:auto}
 .cat.has{border-color:var(--gold)}
 .cat:disabled{opacity:.45;cursor:default}
 .panel{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.pw{position:relative}
+.pw input{padding-left:70px}
+.pw .eye{position:absolute;left:6px;top:50%;transform:translateY(-50%);height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--soft);font:inherit;font-size:13px;cursor:pointer}
+.tgp{border-color:#2AABEE}
