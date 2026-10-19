@@ -1,3 +1,4 @@
+import { wa } from '@/lib/brand';
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
@@ -7,7 +8,7 @@ import { requestActivation, acceptDisclaimer } from './actions';
 export const dynamic = 'force-dynamic';
 
 export default async function Rooms() {
-  const { sb, profile } = await currentUser();
+  const { sb, user, profile } = await currentUser();
   if (!profile) return null;
 
   // 1) not verified yet → activation
@@ -24,7 +25,8 @@ export default async function Rooms() {
           {profile.activation_requested_at ? (
             <div className="card hl">
               <b>طلبك وصلنا ✅</b>
-              <div className="muted" style={{ marginTop: 6 }}>فريقنا بيراجعه وبيفعّل حسابك خلال وقت قصير. رح يوصلك إيميل لما يتفعّل.</div>
+              <div className="muted" style={{ marginTop: 6, lineHeight: 1.8 }}>فريقنا بيراجعه وبيفعّل حسابك خلال وقت قصير. ارجع لهالصفحة بعد شوي، أو راسلنا على واتساب لتسريع التفعيل.</div>
+              <a className="btn green" style={{ marginTop: 12, width: '100%' }} href={wa('مرحبا، سجّلت بغرفة التداول وبعتت طلب تفعيل. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب</a>
             </div>
           ) : (
             <form action={requestActivation} className="card grid">
@@ -37,7 +39,10 @@ export default async function Rooms() {
               <button className="btn">أرسل طلب التفعيل</button>
             </form>
           )}
-          <div className="note">ما عندك حساب تحت وكالتنا؟ تواصل مع فريق موقع توصيات لفتح حساب.</div>
+          <div className="note grid" style={{ gap: 10 }}>
+            <span>ما عندك حساب تحت وكالتنا؟ تواصل مع فريق موقع توصيات لفتح حساب.</span>
+            <a className="btn ghost" href={wa('مرحبا، بدي افتح حساب تداول تحت وكالة موقع توصيات لأدخل غرف التوصيات.')} target="_blank" rel="noopener">تواصل معنا على واتساب</a>
+          </div>
         </main>
       </>
     );
