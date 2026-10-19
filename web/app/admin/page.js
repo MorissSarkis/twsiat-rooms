@@ -1,6 +1,6 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { symName, fmt, STATE_AR } from '@/lib/format';
+import { symName, fmt, STATE_AR, when } from '@/lib/format';
 import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,23 @@ export default async function Admin() {
           <h1>الباك أوفيس</h1>
           <a className="btn" href="/admin/new">+ توصية من المحلل</a>
         </div>
+
+        {canDecide && (
+          <>
+            <h2>طلبات تفعيل العملاء {queue?.length ? <span className="badge sell">{queue.length}</span> : '(0)'}</h2>
+            {(!queue || queue.length === 0) && <div className="card muted">ما في طلبات.</div>}
+            {queue?.map((c) => (
+              <form key={c.id} action={verifyClient} className="card hl row" style={{ justifyContent: 'space-between' }}>
+                <input type="hidden" name="id" value={c.id} />
+                <div><b>{c.display_name}</b><div className="muted">{c.broker} · <span className="ltr">{c.broker_account}</span> · {when(c.activation_requested_at)}</div></div>
+                <div className="row">
+                  <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
+                  <button className="btn">فعّل</button>
+                </div>
+              </form>
+            ))}
+          </>
+        )}
 
         {log && log.length > 0 && (
           <div className="note grid" style={{ gap: 4 }}>
@@ -170,23 +187,6 @@ export default async function Admin() {
                   </form>
                 )}
               </div>
-            ))}
-          </>
-        )}
-
-        {canDecide && (
-          <>
-            <h2>طلبات تفعيل العملاء ({queue?.length || 0})</h2>
-            {(!queue || queue.length === 0) && <div className="card muted">ما في طلبات.</div>}
-            {queue?.map((c) => (
-              <form key={c.id} action={verifyClient} className="card row" style={{ justifyContent: 'space-between' }}>
-                <input type="hidden" name="id" value={c.id} />
-                <div><b>{c.display_name}</b><div className="muted">{c.broker} · <span className="ltr">{c.broker_account}</span></div></div>
-                <div className="row">
-                  <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
-                  <button className="btn">فعّل</button>
-                </div>
-              </form>
             ))}
           </>
         )}
