@@ -1,21 +1,30 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export default function Login() {
   const sb = supabaseBrowser();
   const router = useRouter();
-  const [mode, setMode] = useState('in'); // 'in' | 'up'
+  const [mode, setMode] = useState('in'); // 'in' | 'up' | 'reset'
+  const googleOn = process.env.NEXT_PUBLIC_GOOGLE_LOGIN === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('e') === 'link') setErr('رابط التفعيل انتهى أو استُعمل قبل. سجّل دخول، أو اطلب رابط جديد.');
+  }, []);
 
   async function submit(e) {
     e.preventDefault(); setErr(null); setMsg(null); setBusy(true);
+    if (mode === 'reset') {
+      await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/auth/callback?next=/reset` });
+      setBusy(false);
+      return setMsg('إذا الإيميل مسجّل عنا، رح توصلك رسالة فيها رابط لتغيير كلمة السر.');
+    }
     if (mode === 'in') {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       setBusy(false);
@@ -51,8 +60,11 @@ export default function Login() {
           <button type="button" className={`btn ${mode === 'up' ? '' : 'ghost'}`} style={{ flex: 1, border: 'none' }} onClick={() => setMode('up')}>حساب جديد</button>
         </div>
 
-        <button type="button" className="btn ghost" onClick={google}>الدخول بحساب Google</button>
-        <div className="muted" style={{ textAlign: 'center' }}>أو بالإيميل</div>
+        {googleOn && mode !== 'reset' && <>
+          <button type="button" className="btn ghost" onClick={google}>الدخول بحساب Google</button>
+          <div className="muted" style={{ textAlign: 'center' }}>أو بالإيميل</div>
+        </>}
+        {mode === 'reset' && <div className="muted">اكتب إيميلك وبنبعتلك رابط لتغيير كلمة السر.</div>}
 
         <form onSubmit={submit} className="grid">
           {mode === 'up' && (
@@ -63,13 +75,17 @@ export default function Login() {
           <label>الإيميل
             <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
-          <label>كلمة السر
-            <input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-          </label>
+          {mode !== 'reset' && (
+            <label>كلمة السر
+              <input type="password" dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+            </label>
+          )}
           {err && <div className="err">{err}</div>}
           {msg && <div className="note">{msg}</div>}
-          <button className="btn" disabled={busy}>{busy ? '...' : mode === 'in' ? 'دخول' : 'إنشاء حساب'}</button>
+          <button className="btn" disabled={busy}>{busy ? '...' : mode === 'in' ? 'دخول' : mode === 'up' ? 'إنشاء حساب' : 'ابعتلي الرابط'}</button>
         </form>
+        {mode === 'in' && <button type="button" className="btn ghost" style={{ border: 'none' }} onClick={() => { setMode('reset'); setErr(null); setMsg(null); }}>نسيت كلمة السر؟</button>}
+        {mode === 'reset' && <button type="button" className="btn ghost" style={{ border: 'none' }} onClick={() => { setMode('in'); setErr(null); setMsg(null); }}>رجوع لتسجيل الدخول</button>}
       </div>
     </main>
   );
