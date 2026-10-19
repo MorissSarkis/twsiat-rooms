@@ -1,4 +1,4 @@
-import { wa } from '@/lib/brand';
+import { wa, BROKERS } from '@/lib/brand';
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
@@ -30,11 +30,11 @@ export default async function Rooms() {
             </div>
           ) : (
             <form action={requestActivation} className="card grid">
-              <label>الوسيط
-                <select name="broker" defaultValue="Exness"><option>Exness</option><option>غير ذلك</option></select>
+              <label>شركة التداول
+                <select name="broker" defaultValue="Exness">{BROKERS.map((b) => <option key={b}>{b}</option>)}</select>
               </label>
               <label>رقم حساب التداول (MT4 / MT5)
-                <input name="account" dir="ltr" inputMode="numeric" required />
+                <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required />
               </label>
               <button className="btn">أرسل طلب التفعيل</button>
             </form>
