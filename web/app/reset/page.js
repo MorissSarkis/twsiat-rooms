@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { LOGO_URL } from '@/lib/brand';
 
 export default function Reset() {
   const sb = supabaseBrowser();
@@ -24,6 +25,7 @@ export default function Reset() {
 
   return (
     <main className="wrap" style={{ maxWidth: 420, paddingTop: 48 }}>
+      <div style={{ textAlign: 'center' }}><img src={LOGO_URL} alt="موقع توصيات" width={72} height={72} className="logo" style={{ borderRadius: 16, marginBottom: 10 }} /></div>
       <h1 style={{ fontSize: 24, textAlign: 'center' }}>كلمة سر جديدة</h1>
       <form onSubmit={submit} className="card grid">
         <label>كلمة السر الجديدة

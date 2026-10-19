@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { LOGO_URL } from '@/lib/brand';
 
 export default function Login() {
   const sb = supabaseBrowser();
@@ -48,6 +49,7 @@ export default function Login() {
   return (
     <main className="wrap" style={{ maxWidth: 420, paddingTop: 48 }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <a href="https://www.twsiat.com"><img src={LOGO_URL} alt="موقع توصيات" width={84} height={84} className="logo" style={{ borderRadius: 18, marginBottom: 12 }} /></a>
         <h1 style={{ fontSize: 26 }}>غرفة التداول</h1>
         <div className="muted" style={{ fontSize: 14, lineHeight: 1.7 }}>
           مستويات يومية، أدوات وغرف توصيات خبراء موقع توصيات
