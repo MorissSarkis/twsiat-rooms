@@ -51,7 +51,7 @@ export default function Login() {
     <main className="wrap" style={{ maxWidth: 420, paddingTop: 48 }}>
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
         <a href="https://www.twsiat.com"><img src={LOGO_URL} alt="موقع توصيات" width={84} height={84} className="logo" style={{ borderRadius: 18, marginBottom: 12 }} /></a>
-        <h1 style={{ fontSize: 26 }}>غرفة التداول</h1>
+        <h1 style={{ fontSize: 26 }}>غرفة التوصيات</h1>
         <div className="muted" style={{ fontSize: 14, lineHeight: 1.7 }}>
           مستويات يومية، أدوات وغرف توصيات خبراء موقع توصيات
         </div>

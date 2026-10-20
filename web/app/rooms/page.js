@@ -29,7 +29,7 @@ export default async function Rooms() {
             <div className="card hl">
               <b>طلبك وصلنا ✅</b>
               <div className="muted" style={{ marginTop: 6, lineHeight: 1.8 }}>فريقنا بيراجعه وبيفعّل حسابك خلال وقت قصير. ارجع لهالصفحة بعد شوي، أو راسلنا على واتساب لتسريع التفعيل.</div>
-              <a className="btn green" style={{ marginTop: 12, width: '100%' }} href={wa('مرحبا، سجّلت بغرفة التداول وبعتت طلب تفعيل. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب</a>
+              <a className="btn green" style={{ marginTop: 12, width: '100%' }} href={wa('مرحبا، سجّلت بغرفة التوصيات وبعتت طلب تفعيل. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب</a>
             </div>
           ) : (
             <form action={requestActivation} className="card grid">

@@ -1,6 +1,6 @@
 import './globals.css';
 import { LOGO_URL } from '@/lib/brand';
-export const metadata = { title: 'غرف التداول — موقع توصيات', description: 'غرف توصيات خبراء موقع توصيات', icons: { icon: LOGO_URL, apple: LOGO_URL } };
+export const metadata = { title: 'غرفة التوصيات — موقع توصيات', description: 'غرف توصيات خبراء موقع توصيات', icons: { icon: LOGO_URL, apple: LOGO_URL } };
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl">
