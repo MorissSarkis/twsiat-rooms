@@ -2,3 +2,7 @@ rooms.twsiat.com {
   encode gzip
   reverse_proxy web:3000
 }
+
+mt5.twsiat.com {
+  reverse_proxy mt5:3000
+}

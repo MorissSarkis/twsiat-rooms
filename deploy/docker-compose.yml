@@ -15,5 +15,17 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
     depends_on: [web]
+  # MT5 price bridge (Linux + Wine, browser access via mt5.twsiat.com). Only started with COMPOSE_PROFILES=bridge
+  # (set by bridge-install.sh in deploy/.env together with the login password — that file is never committed).
+  mt5:
+    image: gmag11/metatrader5_vnc:1.1
+    profiles: ["bridge"]
+    restart: always
+    environment:
+      - CUSTOM_USER=${MT5_USER:-trader}
+      - PASSWORD=${MT5_PASSWORD:-}
+      - TZ=Etc/UTC
+    volumes:
+      - /opt/mt5:/config
 volumes:
   caddy_data:
