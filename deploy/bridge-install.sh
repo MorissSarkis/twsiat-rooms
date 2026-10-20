@@ -12,6 +12,8 @@ if ! grep -q '^MT5_PASSWORD=' .env 2>/dev/null; then
   chmod 600 .env
 fi
 mkdir -p /opt/mt5
+# switching from the old Alpine image: start from a clean MT5 folder once
+if [ ! -f /opt/mt5/.twsiat-v2 ]; then docker compose rm -sf mt5 >/dev/null 2>&1 || true; rm -rf /opt/mt5/* /opt/mt5/.[!.]* 2>/dev/null || true; touch /opt/mt5/.twsiat-v2; fi
 docker compose up -d --build
 echo "Waiting for MetaTrader 5 to install inside the container (first time 5-10 minutes)..."
 docker compose restart caddy >/dev/null 2>&1 || true

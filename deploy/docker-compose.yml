@@ -18,7 +18,10 @@ services:
   # MT5 price bridge (Linux + Wine, browser access via mt5.twsiat.com). Only started with COMPOSE_PROFILES=bridge
   # (set by bridge-install.sh in deploy/.env together with the login password — that file is never committed).
   mt5:
-    image: gmag11/metatrader5_vnc:1.1
+    build:
+      context: ./mt5
+      args:
+        WINE_SERIES: ${WINE_SERIES:-10.0}
     profiles: ["bridge"]
     restart: always
     environment:
