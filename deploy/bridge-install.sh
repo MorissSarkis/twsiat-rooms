@@ -14,12 +14,13 @@ fi
 mkdir -p /opt/mt5
 docker compose up -d --build
 echo "Waiting for MetaTrader 5 to install inside the container (first time 5-10 minutes)..."
-EXP="/opt/mt5/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts"
-i=0; while [ ! -d "$EXP" ] && [ $i -lt 120 ]; do sleep 10; i=$((i+1)); done
-if [ -d "$EXP" ]; then
+docker compose restart caddy >/dev/null 2>&1 || true
+findexp() { find /opt/mt5 -type d -path '*MQL5/Experts' 2>/dev/null | head -1; }
+i=0; EXP=$(findexp); while [ -z "$EXP" ] && [ $i -lt 60 ]; do sleep 10; i=$((i+1)); EXP=$(findexp); done
+if [ -n "$EXP" ]; then
   cp /opt/twsiat-rooms/mt5/TwsiatPriceBridge.mq5 "$EXP/"
-  chown -R "$(stat -c %u:%g "$EXP")" "$EXP/TwsiatPriceBridge.mq5"
-  echo "Bridge code copied into MT5 (Experts/TwsiatPriceBridge.mq5)."
+  chown "$(stat -c %u:%g "$EXP")" "$EXP/TwsiatPriceBridge.mq5"
+  echo "Bridge code copied into: $EXP"
 else
   echo "MT5 is still installing. Run this script again in a few minutes to copy the bridge code."
 fi
