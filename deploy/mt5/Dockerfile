@@ -1,7 +1,7 @@
 # MT5 in the browser (KasmVNC) with Wine pinned to a version MetaTrader accepts.
 # Newer Wine (10.3+) triggers MT5's "A debugger has been found running in your system".
 FROM gmag11/metatrader5_vnc:latest
-ARG WINE_SERIES=10.0
+ARG WINE_SERIES=9.0
 RUN mkdir -pm755 /etc/apt/keyrings \
  && wget -qO /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
  && apt-get update \

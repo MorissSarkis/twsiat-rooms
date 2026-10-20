@@ -21,9 +21,11 @@ services:
     build:
       context: ./mt5
       args:
-        WINE_SERIES: ${WINE_SERIES:-10.0}
+        WINE_SERIES: ${WINE_SERIES:-9.0}
     profiles: ["bridge"]
     restart: always
+    security_opt: ["seccomp:unconfined"]
+    cap_add: ["SYS_PTRACE"]
     environment:
       - CUSTOM_USER=${MT5_USER:-trader}
       - PASSWORD=${MT5_PASSWORD:-}
