@@ -15,14 +15,14 @@ mkdir -p /opt/mt5
 docker compose up -d --build
 echo "Waiting for MetaTrader 5 to install inside the container (first time 5-10 minutes)..."
 docker compose restart caddy >/dev/null 2>&1 || true
-findexp() { find /opt/mt5 -type d -path '*MQL5/Experts' 2>/dev/null | head -1; }
-i=0; EXP=$(findexp); while [ -z "$EXP" ] && [ $i -lt 60 ]; do sleep 10; i=$((i+1)); EXP=$(findexp); done
+findexp() { docker compose exec -T mt5 sh -c "find / \( -path /proc -o -path /sys \) -prune -o -type d -path '*MQL5/Experts' -print 2>/dev/null | head -1"; }
+i=0; EXP=$(findexp); while [ -z "$EXP" ] && [ $i -lt 30 ]; do sleep 10; i=$((i+1)); EXP=$(findexp); done
 if [ -n "$EXP" ]; then
-  cp /opt/twsiat-rooms/mt5/TwsiatPriceBridge.mq5 "$EXP/"
-  chown "$(stat -c %u:%g "$EXP")" "$EXP/TwsiatPriceBridge.mq5"
+  docker compose cp /opt/twsiat-rooms/mt5/TwsiatPriceBridge.mq5 "mt5:$EXP/TwsiatPriceBridge.mq5"
+  docker compose exec -T mt5 sh -c "chown \$(stat -c %u:%g '$EXP') '$EXP/TwsiatPriceBridge.mq5'" || true
   echo "Bridge code copied into: $EXP"
 else
-  echo "MT5 is still installing. Run this script again in a few minutes to copy the bridge code."
+  echo "Could not find the MT5 Experts folder yet. Open https://mt5.twsiat.com once, then run this script again."
 fi
 docker compose ps
 echo "Done. Open https://mt5.twsiat.com (user: trader + your password)."
