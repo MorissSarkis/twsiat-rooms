@@ -32,9 +32,9 @@ export default async function Record() {
           <div className="card hl grid" style={{ gap: 6 }}>
             <div className="muted">كل الأدوات</div>
             <b style={{ fontSize: 22 }}>{all.trades} صفقة مسكّرة</b>
-            <div>نسبة النجاح: <b>{all.trades ? fmt((100 * all.wins) / all.trades, 0) : '—'}%</b></div>
-            <div>نص عند الهدف 1 والباقي للهدف 2: <b className={all.p >= 0 ? 'ok ltr' : 'bad ltr'}>{R(all.p)}</b></div>
-            <div>الهدف 1 بس: <b className={all.t >= 0 ? 'ok ltr' : 'bad ltr'}>{R(all.t)}</b></div>
+            <div>نسبة النجاح: <b>{all.trades ? `${fmt((100 * all.wins) / all.trades, 0)}%` : '—'}</b></div>
+            <div>نص عند الهدف 1 والباقي للهدف 2: <b className={all.p >= 0 ? 'ok ltr' : 'bad ltr'}>{all.trades ? R(all.p) : '—'}</b></div>
+            <div>الهدف 1 بس: <b className={all.t >= 0 ? 'ok ltr' : 'bad ltr'}>{all.trades ? R(all.t) : '—'}</b></div>
           </div>
           <div className="card grid" style={{ gap: 6 }}>
             <div>صفقات شغّالة هلق: <b>{data?.open_now ?? 0}</b></div>
