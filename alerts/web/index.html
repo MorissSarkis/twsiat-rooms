@@ -312,7 +312,7 @@ function renderAssets() {
       </div>
       ${ladderHTML(a)}
       ${staleText(a)}
-      ${a.error ? `<div class="err">⚠️ ${/not available/.test(a.error) ? "غير متوفرة عند الشركة" : /no prices yet/.test(a.error) ? "لا توجد أسعار بعد — جسر الأسعار لا يرسل هذه الأداة" : esc(a.error)}</div>` : ""}
+      ${a.error ? `<div class="err">⚠️ ${/not available/.test(a.error) ? "غير متوفرة عند الشركة" : /no prices yet/.test(a.error) ? "لا توجد أسعار بعد — جسر الأسعار لا يرسل هذه الأداة" : /history loading/.test(a.error) ? "⏳ جارِ تحميل التاريخ من جسر الأسعار — المستويات بتظهر خلال دقائق" : esc(a.error)}</div>` : ""}
     </div>`).join("") || `<div class="empty">ما في بيانات بعد…</div>`;
   $("assets").querySelectorAll(".card").forEach(c => c.onclick = () => openSheet(c.dataset.name));
 }

@@ -36,6 +36,7 @@ class AlertService:
         self.assets = cfg["assets"]
         self.feed_name = cfg.get("feed", "mt5")
         self._resolved = {}
+        self._retry_at = {}
 
     # ---------- persistence ----------
     def _load(self):
@@ -128,7 +129,13 @@ class AlertService:
                 sym = self.symbol(a)
                 ctx = self.contexts.get(name)
                 if ctx is None or time.time() - ctx["at"] > refresh:
-                    ctx = self._context(sym)
+                    if ctx is None and time.time() < self._retry_at.get(name, 0):
+                        continue                         # failed recently: try again in a minute
+                    try:
+                        ctx = self._context(sym)
+                    except Exception:
+                        self._retry_at[name] = time.time() + 60
+                        raise
                     with self.lock:
                         self.contexts[name] = ctx
                     prev = self.state["last_trend"].get(name)

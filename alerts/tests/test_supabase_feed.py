@@ -34,9 +34,9 @@ class FakeFeed(SupabaseFeed):
                     "m5": {"XAUUSD": [4130.0, iso(NOW - timedelta(seconds=self.m5_age_s))]}}
         if fn == "alerts_daily":
             today = NOW.date()
-            return [[str(today - timedelta(days=2)), 1, 2, 0.5, 1.5],
-                    [str(today - timedelta(days=1)), 4130, 4155.561, 4111.499, 4114.051],
-                    [str(today), 4114, 4135, 4110, 4130]]
+            hist = [[str(today - timedelta(days=d)), 1, 2, 0.5, 1.5] for d in range(25, 1, -1)]
+            return hist + [[str(today - timedelta(days=1)), 4130, 4155.561, 4111.499, 4114.051],
+                           [str(today), 4114, 4135, 4110, 4130]]
         raise AssertionError(fn)
 
 
@@ -64,7 +64,7 @@ def test_symbols_and_digits():
 def test_daily_excludes_today_and_is_cached():
     f = FakeFeed(live_age_s=5)
     d = f.daily("XAUUSD", 40)
-    assert len(d) == 2 and d.iloc[-1]["high"] == pytest.approx(4155.561)
+    assert d.iloc[-1]["high"] == pytest.approx(4155.561)
     assert d.index[-1] < pd.Timestamp(NOW.date())
     f.daily("XAUUSD", 40)
     assert f.calls.count("alerts_daily") == 1
@@ -96,3 +96,20 @@ def test_outage_fails_fast_instead_of_once_per_instrument():
         with pytest.raises(Exception):
             f.has_symbol("XAUUSD")
     assert n["calls"] == 1
+
+
+def test_old_patchy_history_is_not_used_as_yesterday():
+    f = FakeFeed(live_age_s=5)
+    today = NOW.date()
+    old = [[str(today - timedelta(days=60 + i)), 0.86, 0.861, 0.85, 0.855] for i in range(20)]
+    f._rpc_once = lambda fn, p: old if fn == "alerts_daily" else FakeFeed._rpc_once(f, fn, p)
+    with pytest.raises(RuntimeError, match="history loading"):
+        f.daily("EURGBP", 40)
+
+
+def test_weekend_gap_is_fine():
+    f = FakeFeed(live_age_s=5)
+    today = NOW.date()
+    rows = [[str(today - timedelta(days=3 + i)), 1, 2, 0.5, 1.5] for i in range(30)][::-1]
+    f._rpc_once = lambda fn, p: rows if fn == "alerts_daily" else FakeFeed._rpc_once(f, fn, p)
+    assert len(f.daily("XAUUSD", 40)) == 30

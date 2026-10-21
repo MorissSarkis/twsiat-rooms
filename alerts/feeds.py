@@ -217,7 +217,7 @@ class SupabaseFeed:
             return cached[1]
         rows = self._rpc("alerts_daily", {"p_token": self.token, "p_symbol": sym, "p_days": 420})
         if not rows:
-            raise RuntimeError(f"No daily data for {sym}")
+            raise RuntimeError(f"history loading: no daily bars yet for {sym}")
         df = pd.DataFrame(rows, columns=["day", "open", "high", "low", "close"])
         df.index = pd.to_datetime(df.pop("day"))
         df = df.astype(float)
@@ -227,7 +227,14 @@ class SupabaseFeed:
     def daily(self, sym, n=40):
         df = self._days(sym)
         today = pd.Timestamp.now(tz="UTC").normalize().tz_localize(None)
-        return df[df.index < today].tail(n)            # completed days only
+        done = df[df.index < today]                     # completed days only
+        # Guard: the last completed day must be recent (a weekend/holiday is fine). Old or patchy
+        # history would turn an old day into "yesterday" and give wrong pivots.
+        if len(done) < 15 or (today - done.index[-1]).days > 4:
+            self._daily.pop(sym, None)                  # look again next time
+            last = done.index[-1].date() if len(done) else "none"
+            raise RuntimeError(f"history loading: {len(done)} days, last {last} for {sym}")
+        return done.tail(n)
 
     def bars(self, sym, tf, n=300):
         if tf != "D1":
