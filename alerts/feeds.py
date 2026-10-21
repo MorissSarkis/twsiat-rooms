@@ -198,7 +198,7 @@ class SupabaseFeed:
 
     # ---- symbols ----
     def _symbol_list(self):
-        if time.time() - self._symbols_at > 3600 or not self._symbols:
+        if time.time() - self._symbols_at > 300 or not self._symbols:      # new bridge symbols show up within 5 min
             self._symbols = self._rpc("alerts_symbols", {"p_token": self.token}) or {}
             self._symbols_at = time.time()
         return self._symbols

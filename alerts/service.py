@@ -79,6 +79,8 @@ class AlertService:
                 self._resolved[a["name"]] = c
                 log.info("%s -> %s", a["name"], c)
                 return c
+        if self.feed_name == "supabase":
+            raise RuntimeError("no prices yet: the price bridge is not sending " + " / ".join(candidates))
         raise RuntimeError("not available at this broker (tried " + ", ".join(candidates) + ")")
 
     def effective_trend(self, name):
