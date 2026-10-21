@@ -11,6 +11,7 @@ is tracked automatically against live prices.
 | `engine/` | Signal rules (checker + daily engine suggestion) and outcome tracking — Python |
 | `db/` | Supabase / Postgres schema and security policies |
 | `web/` | Web app (Next.js) — Phase 2 |
+| `alerts/` | Pivot alerts app (alerts.twsiat.com): phone notifications when price reaches S1–S3 / P / R1–R3 — Python |
 | `docs/` | Decisions and results |
 
 ## Phase 1 result (gold, Jan 2020 – Oct 2026, M5, Exness prices, spread included)
@@ -55,3 +56,5 @@ Rule to join the engine: average ≥ +0.05R in both 2020–23 and 2024–26. Ind
 - Telegram channel gets alerts without price levels (levels stay inside the rooms).
 - Community room: ideas posted only through `community_post()` (server price and time, no edits or deletes), tracked on the same M5 prices; ranking starts after 20 closed trades.
 - Levels page: classic pivots (R1–R3, S1–S3), previous-day range, Fibonacci of that range in the trend direction, ATR, daily and H1 trend.
+- Pivot alerts (alerts.twsiat.com, separate app, own login): facts only — "price reached S1", no buy/sell advice.
+  Prices from the same bridge: closed M5 bars + live bid every 5 s (bridge 2.1, `prices_live`, db/020).

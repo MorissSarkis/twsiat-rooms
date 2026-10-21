@@ -1,0 +1,135 @@
+# ---------------------------------------------------------------
+# Pivot Ladder Alerts — settings
+# ---------------------------------------------------------------
+
+# Where prices come from: mt5 (recommended, matches the broker exactly),
+# yahoo (free, for testing) or demo (simulated prices, no internet needed)
+# Where prices come from:
+#   supabase = the Twsiat price bridge (MT5 on the VPS -> Supabase), used on the server   <-- default
+#   mt5      = a MetaTrader 5 terminal on the same Windows computer
+#   demo     = simulated prices, to try the app
+feed: supabase
+supabase:
+  url: https://iqkuyqvhsrzlnanltybu.supabase.co
+  publishable_key: sb_publishable_bFGGkLFIOZYIfjbMrogW7g_Haw2W0zt   # public key (already in the web app)
+  # alerts_token: comes from the ALERTS_TOKEN environment variable (deploy/.env) — never put it here
+  live_max_age_seconds: 120   # a live price older than this falls back to the last closed M5 bar
+mt5_suffix: "m"            # only for feed: mt5 (Exness Standard: XAUUSDm)
+
+# ---------------------------------------------------------------
+# The private app (phone notifications + dashboard)
+# ---------------------------------------------------------------
+app:
+  password: ""              # on the server: ALERTS_PASSWORD in deploy/.env
+  port: 8080
+  host: 0.0.0.0
+  contact: "mailto:you@example.com"   # your email; push services may use it if something is wrong
+
+# Optional extra channels next to the app (normally empty): [telegram] and/or [whatsapp]
+extra_channels: []
+
+telegram:
+  bot_token: ""
+  chat_ids: []
+
+whatsapp:
+  phone_number_id: ""
+  access_token: ""
+  to: []
+  template_name: pivot_alert
+  template_lang: en
+
+# mode: all    = alert every time price reaches ANY level (S1-S3, P, R1-R3),
+#                falling or rising, no trend filter  <-- what the client asked for
+#       ladder = only buy levels (S) in an uptrend / sell levels (R) in a downtrend,
+#                plus bounce, stop and trend-break alerts
+mode: all
+levels: [R3, R2, R1, P, S1, S2, S3]   # which levels to alert on in "all" mode
+approach_alerts: true      # also send "price falling/rising toward S1" a little before
+cross_buffer_atr: 0.15     # price must be this far on the other side before a new crossing counts (stops wobble spam)
+
+poll_seconds: 10           # how often prices are checked
+refresh_minutes: 15        # how often levels / trend / ATR are recalculated
+# Trend = the client's rule: UP while the long-term bottom holds, DOWN while the
+# long-term top holds. Found automatically on daily bars; he can also set his own
+# level from Telegram with /bottom GOLD 4066 or /top OIL 75.20.
+trend_timeframe: D1        # timeframe used to find the long-term bottom/top
+swing_strength: 5          # bars on each side that confirm a swing (5 on D1 = about a week)
+
+# Distances are a fraction of each asset's daily ATR(14),
+# so gold, EUR/GBP and BTC all behave sensibly with the same settings.
+approach_atr: 0.10         # "approaching" alert when within 10% of ATR of a level
+rearm_atr: 0.30            # level re-arms after price moves this far away again
+stop_buffer_atr: 0.05      # S3/R3 counts as broken once price is beyond it by this much
+alert_without_trend: false # true = send both ladders even when trend is unclear
+daily_summary: true        # one message per new day with all levels and trends
+
+# name:  label shown in the app and alerts
+# group: forex / commodities / indices / crypto / stocks (filter tabs in the app)
+# mt5:   symbol name as the bridge sends it, WITHOUT the broker suffix. A list = names to try in order; the first one
+#        that exists at the broker is used (brokers name indices and commodities differently).
+#        Anything not found at the broker shows a warning on its card in the app.
+# yahoo: Yahoo Finance ticker (only used with feed: yahoo)
+assets:
+  # ---- Forex: 7 majors + 21 crosses ----
+  - {group: forex, name: EUR/USD, mt5: EURUSD, yahoo: EURUSD=X}
+  - {group: forex, name: GBP/USD, mt5: GBPUSD, yahoo: GBPUSD=X}
+  - {group: forex, name: AUD/USD, mt5: AUDUSD, yahoo: AUDUSD=X}
+  - {group: forex, name: NZD/USD, mt5: NZDUSD, yahoo: NZDUSD=X}
+  - {group: forex, name: USD/CAD, mt5: USDCAD, yahoo: USDCAD=X}
+  - {group: forex, name: USD/CHF, mt5: USDCHF, yahoo: USDCHF=X}
+  - {group: forex, name: USD/JPY, mt5: USDJPY, yahoo: USDJPY=X}
+  - {group: forex, name: EUR/GBP, mt5: EURGBP, yahoo: EURGBP=X}
+  - {group: forex, name: EUR/AUD, mt5: EURAUD, yahoo: EURAUD=X}
+  - {group: forex, name: EUR/NZD, mt5: EURNZD, yahoo: EURNZD=X}
+  - {group: forex, name: EUR/CAD, mt5: EURCAD, yahoo: EURCAD=X}
+  - {group: forex, name: EUR/CHF, mt5: EURCHF, yahoo: EURCHF=X}
+  - {group: forex, name: EUR/JPY, mt5: EURJPY, yahoo: EURJPY=X}
+  - {group: forex, name: GBP/AUD, mt5: GBPAUD, yahoo: GBPAUD=X}
+  - {group: forex, name: GBP/NZD, mt5: GBPNZD, yahoo: GBPNZD=X}
+  - {group: forex, name: GBP/CAD, mt5: GBPCAD, yahoo: GBPCAD=X}
+  - {group: forex, name: GBP/CHF, mt5: GBPCHF, yahoo: GBPCHF=X}
+  - {group: forex, name: GBP/JPY, mt5: GBPJPY, yahoo: GBPJPY=X}
+  - {group: forex, name: AUD/NZD, mt5: AUDNZD, yahoo: AUDNZD=X}
+  - {group: forex, name: AUD/CAD, mt5: AUDCAD, yahoo: AUDCAD=X}
+  - {group: forex, name: AUD/CHF, mt5: AUDCHF, yahoo: AUDCHF=X}
+  - {group: forex, name: AUD/JPY, mt5: AUDJPY, yahoo: AUDJPY=X}
+  - {group: forex, name: NZD/CAD, mt5: NZDCAD, yahoo: NZDCAD=X}
+  - {group: forex, name: NZD/CHF, mt5: NZDCHF, yahoo: NZDCHF=X}
+  - {group: forex, name: NZD/JPY, mt5: NZDJPY, yahoo: NZDJPY=X}
+  - {group: forex, name: CAD/CHF, mt5: CADCHF, yahoo: CADCHF=X}
+  - {group: forex, name: CAD/JPY, mt5: CADJPY, yahoo: CADJPY=X}
+  - {group: forex, name: CHF/JPY, mt5: CHFJPY, yahoo: CHFJPY=X}
+  # ---- Commodities ----
+  - {group: commodities, name: GOLD, mt5: [XAUUSD, GOLD], yahoo: GC=F}
+  - {group: commodities, name: SILVER, mt5: [XAGUSD, SILVER], yahoo: SI=F}
+  - {group: commodities, name: OIL WTI, mt5: [USOIL, XTIUSD, WTI], yahoo: CL=F}
+  - {group: commodities, name: OIL BRENT, mt5: [UKOIL, XBRUSD, BRENT], yahoo: BZ=F}
+  - {group: commodities, name: NATURAL GAS, mt5: [XNGUSD, NGAS, NATGAS], yahoo: NG=F}
+  - {group: commodities, name: PLATINUM, mt5: [XPTUSD, PLATINUM], yahoo: PL=F}
+  - {group: commodities, name: PALLADIUM, mt5: [XPDUSD, PALLADIUM], yahoo: PA=F}
+  - {group: commodities, name: COPPER, mt5: [XCUUSD, COPPER, HG], yahoo: HG=F}
+  # ---- Indices ----
+  - {group: indices, name: NASDAQ 100, mt5: [USTEC, NAS100, US100, USTECH], yahoo: "^NDX"}
+  - {group: indices, name: DOW JONES, mt5: [US30, DJ30, WS30], yahoo: "^DJI"}
+  - {group: indices, name: S&P 500, mt5: [US500, SPX500, SP500], yahoo: "^GSPC"}
+  - {group: indices, name: DAX 40, mt5: [DE30, DE40, GER40, GER30], yahoo: "^GDAXI"}
+  - {group: indices, name: FTSE 100, mt5: [UK100, FTSE100], yahoo: "^FTSE"}
+  - {group: indices, name: NIKKEI 225, mt5: [JP225, JPN225], yahoo: "^N225"}
+  - {group: indices, name: CAC 40, mt5: [FR40, FRA40], yahoo: "^FCHI"}
+  - {group: indices, name: EURO STOXX 50, mt5: [STOXX50, EU50, EUSTX50], yahoo: "^STOXX50E"}
+  - {group: indices, name: ASX 200, mt5: [AUS200, AU200], yahoo: "^AXJO"}
+  - {group: indices, name: HANG SENG, mt5: [HK50, HSI], yahoo: "^HSI"}
+  - {group: indices, name: DOLLAR INDEX, mt5: [DXY, USDX, DX], yahoo: "DX-Y.NYB"}
+  # ---- Crypto ----
+  - {group: crypto, name: BTC, mt5: [BTCUSD], yahoo: BTC-USD}
+  - {group: crypto, name: ETHEREUM, mt5: [ETHUSD], yahoo: ETH-USD}
+  - {group: crypto, name: XRP, mt5: [XRPUSD], yahoo: XRP-USD}
+  - {group: crypto, name: SOLANA, mt5: [SOLUSD], yahoo: SOL-USD}
+  - {group: crypto, name: UNISWAP, mt5: [UNIUSD], yahoo: UNI7083-USD}
+  # ---- AI / stocks ----
+  - {group: stocks, name: MICROSOFT, mt5: [MSFT, "#MSFT", MSFT.US], yahoo: MSFT}
+  - {group: stocks, name: NVIDIA, mt5: [NVDA, "#NVDA", NVDA.US], yahoo: NVDA}
+  - {group: stocks, name: AMD, mt5: [AMD, "#AMD", AMD.US], yahoo: AMD}
+  - {group: stocks, name: AMAZON, mt5: [AMZN, "#AMZN", AMZN.US], yahoo: AMZN}
+  - {group: stocks, name: NETFLIX, mt5: [NFLX, "#NFLX", NFLX.US], yahoo: NFLX}

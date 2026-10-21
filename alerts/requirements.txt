@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn>=0.29
+cryptography>=42
+requests
+pandas>=2.0
+numpy
+pyyaml
+MetaTrader5; platform_system == "Windows"
+# optional: only for feed: yahoo
+# yfinance

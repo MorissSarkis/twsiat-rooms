@@ -7,6 +7,20 @@ services:
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_bFGGkLFIOZYIfjbMrogW7g_Haw2W0zt
         NEXT_PUBLIC_SITE_URL: https://rooms.twsiat.com
     restart: always
+  # Pivot alerts app (alerts.twsiat.com). Secrets come from deploy/.env (never committed):
+  #   ALERTS_TOKEN (from db/020_alerts.sql), ALERTS_PASSWORD (client login), ALERTS_CONTACT (your email)
+  alerts:
+    build:
+      context: ../alerts
+    restart: always
+    environment:
+      - SUPABASE_URL=https://iqkuyqvhsrzlnanltybu.supabase.co
+      - SUPABASE_PUBLISHABLE_KEY=sb_publishable_bFGGkLFIOZYIfjbMrogW7g_Haw2W0zt
+      - ALERTS_TOKEN=${ALERTS_TOKEN:-}
+      - ALERTS_PASSWORD=${ALERTS_PASSWORD:-}
+      - ALERTS_CONTACT=${ALERTS_CONTACT:-mailto:info@twsiat.com}
+    volumes:
+      - /opt/alerts-data:/data
   caddy:
     image: caddy:2-alpine
     restart: always

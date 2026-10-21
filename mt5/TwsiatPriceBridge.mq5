@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //| TwsiatPriceBridge.mq5                                            |
-//| Sends closed M5 bars to the Twsiat Rooms database (Supabase).    |
+//| Sends closed M5 bars + live prices to the Twsiat database.       |
 //| Read-only: it never opens, changes or closes any trade.          |
 //|                                                                  |
 //| Setup:                                                           |
@@ -10,18 +10,23 @@
 //|     ANY one chart. One copy is enough for all symbols.           |
 //|  3. Leave MT5 running (VPS).                                     |
 //+------------------------------------------------------------------+
-#property description "Twsiat Rooms price bridge — sends M5 bars, never trades"
-#property version     "2.0"
+#property description "Twsiat price bridge — sends M5 bars and live prices, never trades"
+#property version     "2.1"
 
 input string SupabaseUrl    = "https://iqkuyqvhsrzlnanltybu.supabase.co";
 input string PublishableKey = "sb_publishable_bFGGkLFIOZYIfjbMrogW7g_Haw2W0zt";
 input string BridgeToken    = "";                 // from Supabase (app_secrets 'bridge_token') — never share it
 input string Symbols        = "XAUUSD,XAGUSD,USOIL,UKOIL,XNGUSD,US30,USTEC,US500,DE30,UK100,JP225,EURUSD,GBPUSD,USDJPY,USDCHF,AUDUSD,USDCAD,NZDUSD,BTCUSD,ETHUSD";
+input string ExtraSymbols1  = "EURGBP,EURAUD,EURNZD,EURCAD,EURCHF,EURJPY,GBPAUD,GBPNZD,GBPCAD,GBPCHF,GBPJPY,AUDNZD,AUDCAD,AUDCHF,AUDJPY,NZDCAD,NZDCHF,NZDJPY,CADCHF,CADJPY,CHFJPY";  // alerts app
+input string ExtraSymbols2  = "XPTUSD,XPDUSD,XCUUSD,FR40,STOXX50,AUS200,HK50,DXY,XRPUSD,SOLUSD,UNIUSD,MSFT,NVDA,AMD,AMZN,NFLX";  // alerts app
 input string BrokerSuffix   = "m";                // Exness Standard account: XAUUSD -> XAUUSDm
 input int    BackfillDays   = 120;                // history sent once per symbol (indicators need ~60 days)
 input int    ServerGmtOffsetHours = 0;            // Exness = 0. If your server is GMT+2, put 2.
-input int    PushEverySeconds = 30;
+input int    PushEverySeconds = 30;               // closed M5 bars
+input int    LiveEverySeconds = 5;                // live prices for the alerts app (0 = off)
 
+int      g_ticks = 0;
+datetime g_live_last[];
 string   g_broker[];
 string   g_name[];
 datetime g_last_sent[];
@@ -31,8 +36,11 @@ int OnInit()
 {
    if(StringLen(BridgeToken) < 10) { Alert("TwsiatPriceBridge: BridgeToken is empty"); return INIT_PARAMETERS_INCORRECT; }
    string list[];
-   int n = StringSplit(Symbols, ',', list);
-   ArrayResize(g_broker, 0); ArrayResize(g_name, 0); ArrayResize(g_last_sent, 0); ArrayResize(g_backfilled, 0);
+   string all = Symbols;
+   if(StringLen(ExtraSymbols1) > 0) all += "," + ExtraSymbols1;
+   if(StringLen(ExtraSymbols2) > 0) all += "," + ExtraSymbols2;
+   int n = StringSplit(all, ',', list);
+   ArrayResize(g_broker, 0); ArrayResize(g_name, 0); ArrayResize(g_last_sent, 0); ArrayResize(g_backfilled, 0); ArrayResize(g_live_last, 0);
    for(int i = 0; i < n; i++)
    {
       string name = list[i];
@@ -41,12 +49,13 @@ int OnInit()
       string broker = name + BrokerSuffix;
       if(!SymbolSelect(broker, true)) { Print("TwsiatPriceBridge: symbol not found at this broker, skipped: ", broker); continue; }
       int k = ArraySize(g_broker);
-      ArrayResize(g_broker, k + 1); ArrayResize(g_name, k + 1); ArrayResize(g_last_sent, k + 1); ArrayResize(g_backfilled, k + 1);
-      g_broker[k] = broker; g_name[k] = name; g_last_sent[k] = 0; g_backfilled[k] = false;
+      ArrayResize(g_broker, k + 1); ArrayResize(g_name, k + 1); ArrayResize(g_last_sent, k + 1); ArrayResize(g_backfilled, k + 1); ArrayResize(g_live_last, k + 1);
+      g_broker[k] = broker; g_name[k] = name; g_last_sent[k] = 0; g_backfilled[k] = false; g_live_last[k] = 0;
    }
    if(ArraySize(g_broker) == 0) { Alert("TwsiatPriceBridge: no valid symbols"); return INIT_PARAMETERS_INCORRECT; }
-   EventSetTimer(PushEverySeconds);
-   Print("TwsiatPriceBridge 2.0 started for ", ArraySize(g_broker), " symbols; history is uploaded one symbol per cycle");
+   // one timer: live prices every LiveEverySeconds, closed bars every PushEverySeconds
+   EventSetTimer(LiveEverySeconds > 0 ? (int)MathMin(LiveEverySeconds, PushEverySeconds) : PushEverySeconds);
+   Print("TwsiatPriceBridge 2.1 started for ", ArraySize(g_broker), " symbols; live prices every ", LiveEverySeconds, "s");
    return INIT_SUCCEEDED;
 }
 
@@ -54,7 +63,13 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 
 void OnTimer()
 {
-   // 1) live: resend the last hour of closed bars for every symbol already backfilled (upsert makes it safe)
+   int step = (LiveEverySeconds > 0 ? (int)MathMin(LiveEverySeconds, PushEverySeconds) : PushEverySeconds);
+   if(LiveEverySeconds > 0) SendLive();
+   g_ticks += step;
+   if(g_ticks < PushEverySeconds) return;
+   g_ticks = 0;
+
+   // 1) bars: resend the last hour of closed bars for every symbol already backfilled (upsert makes it safe)
    for(int i = 0; i < ArraySize(g_broker); i++)
       if(g_backfilled[i])
          SendRange(i, g_last_sent[i] > 0 ? g_last_sent[i] - 3600 : TimeCurrent() - 86400, 500);
@@ -103,9 +118,31 @@ bool SendRange(int idx, datetime from, int chunk)
    return true;
 }
 
-bool Post(string body)
+// Live prices: the current bid of every symbol whose price changed, in one request.
+void SendLive()
 {
-   string url = SupabaseUrl + "/rest/v1/rpc/ingest_prices";
+   string quotes = "";
+   for(int i = 0; i < ArraySize(g_broker); i++)
+   {
+      MqlTick tk;
+      if(!SymbolInfoTick(g_broker[i], tk) || tk.bid <= 0) continue;
+      if(tk.time == g_live_last[i]) continue;          // nothing new (market closed)
+      int digits = (int)SymbolInfoInteger(g_broker[i], SYMBOL_DIGITS);
+      datetime tg = tk.time - ServerGmtOffsetHours * 3600;
+      if(quotes != "") quotes += ",";
+      quotes += StringFormat("{\"s\":\"%s\",\"b\":%s,\"t\":\"%s\"}", g_name[i],
+                             DoubleToString(tk.bid, digits), TimeToString(tg, TIME_DATE | TIME_SECONDS));
+      g_live_last[i] = tk.time;
+   }
+   if(quotes == "") return;
+   string body = StringFormat("{\"p_token\":\"%s\",\"p_quotes\":[%s]}", BridgeToken, quotes);
+   if(!Post(body, "ingest_live"))
+      ArrayInitialize(g_live_last, 0);                  // failed: send everything again next time
+}
+
+bool Post(string body, string fn = "ingest_prices")
+{
+   string url = SupabaseUrl + "/rest/v1/rpc/" + fn;
    string headers = "Content-Type: application/json\r\napikey: " + PublishableKey + "\r\nAuthorization: Bearer " + PublishableKey + "\r\n";
    char data[], result[];
    string result_headers;

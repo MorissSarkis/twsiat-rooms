@@ -6,3 +6,8 @@ rooms.twsiat.com {
 mt5.twsiat.com {
   reverse_proxy mt5:3000
 }
+
+alerts.twsiat.com {
+  encode gzip
+  reverse_proxy alerts:8080
+}
