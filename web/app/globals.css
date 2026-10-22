@@ -37,8 +37,8 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:right}
 .ladder{display:grid;gap:4px}
 .lv{display:grid;grid-template-columns:90px 1fr 70px;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:#0F1624;font-size:13px}
 .lv b{font-size:15px;text-align:right}
-.lv.res{border-inline-start:3px solid var(--sell)}
-.lv.sup{border-inline-start:3px solid var(--buy)}
+.lv.res{border-inline-start:3px solid var(--buy)}
+.lv.sup{border-inline-start:3px solid var(--sell)}
 .lv.piv{border-inline-start:3px solid var(--gold)}
 .lv.prev{border-inline-start:3px solid var(--muted)}
 .lv.now{background:var(--gold);color:#0B111C;font-weight:700}
