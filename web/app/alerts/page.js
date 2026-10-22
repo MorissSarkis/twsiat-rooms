@@ -1,0 +1,160 @@
+import TopBar from '../TopBar';
+import { currentUser } from '@/lib/supabase-server';
+import { wa, BROKERS } from '@/lib/brand';
+import { requestActivation } from '../rooms/actions';
+import { openAlerts, submitPayment } from './actions';
+import CopyButton from './copy';
+
+export const dynamic = 'force-dynamic';
+
+const ERRORS = {
+  access: 'ما عندك اشتراك فعّال بالتنبيهات حالياً.',
+  txid: 'رقم العملية (TXID) غير صحيح. انسخه كامل من المحفظة أو من موقع البلوكتشين.',
+  network: 'اختار الشبكة اللي حوّلت عليها.',
+  pending: 'عندك طلبات دفع لسا قيد المراجعة. استنى لنراجعها، أو راسلنا على واتساب.',
+  used: 'رقم العملية هاد مسجّل قبل.',
+  pay: 'ما قدرنا نسجّل الدفعة، جرّب مرة ثانية أو راسلنا على واتساب.',
+};
+const STATUS_AR = { pending: 'قيد المراجعة', approved: 'تمت الموافقة ✓', rejected: 'مرفوضة' };
+const day = (t) => new Date(t).toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' });
+
+export default async function Alerts({ searchParams }) {
+  const { sb, user, profile } = await currentUser();
+  if (!profile) return null;
+  const [{ data: access }, { data: plan }, { data: payments }] = await Promise.all([
+    sb.rpc('my_alerts_access'),
+    sb.rpc('alerts_plan'),
+    sb.from('alerts_payments').select('id,amount_usd,network,txid,days,status,note,created_at')
+      .eq('user_id', profile.id).order('created_at', { ascending: false }).limit(5),
+  ]);
+  const ok = access?.ok;
+  const wallets = (plan?.wallets || []).filter((w) => w.address);
+  const pendingPay = (payments || []).some((p) => p.status === 'pending');
+  const err = ERRORS[searchParams?.e];
+
+  return (
+    <>
+      <TopBar profile={profile} />
+      <main className="wrap grid" style={{ maxWidth: 620 }}>
+        <h1>تنبيهات البيفوت 🔔</h1>
+        <div className="muted" style={{ lineHeight: 1.8 }}>
+          إشعار على موبايلك كل ما يوصل السعر لمستوى دعم أو مقاومة يومي (S1–S3، البيفوت، R1–R3)، نزولاً أو صعوداً،
+          على 57 أداة: عملات، ذهب ونفط، مؤشرات، كريبتو وأسهم. التنبيهات معلومات عن السعر بس، مش توصيات شراء أو بيع.
+        </div>
+        {err && <div className="err">{err}</div>}
+        {searchParams?.ok === 'paid' && (
+          <div className="card hl"><b>وصلنا رقم العملية ✅</b>
+            <div className="muted" style={{ marginTop: 6, lineHeight: 1.8 }}>منتأكد من التحويل على البلوكتشين ومنفعّل اشتراكك. عادة خلال ساعات العمل بنفس اليوم.</div>
+          </div>
+        )}
+
+        {ok ? (
+          <div className="card hl grid">
+            <div>
+              <b style={{ fontSize: 17 }}>اشتراكك فعّال ✅</b>
+              <div className="muted" style={{ marginTop: 4 }}>
+                {access.reason === 'ib' && 'مجاناً لعملاء وكالة موقع توصيات.'}
+                {access.reason === 'staff' && 'حساب فريق العمل.'}
+                {access.reason === 'paid' && <>اشتراك مدفوع لغاية <span className="ltr">{day(access.until)}</span>.</>}
+              </div>
+            </div>
+            <form action={openAlerts}><button className="btn green" style={{ width: '100%' }}>افتح تطبيق التنبيهات</button></form>
+            <div className="note" style={{ lineHeight: 1.8 }}>
+              بعد ما يفتح: الإعدادات ← <b>تفعيل الإشعارات</b> ← اسمح ← تنبيه تجريبي.
+              على الآيفون: افتحه بـ Safari ← مشاركة ← «إضافة إلى الشاشة الرئيسية»، وبعدين افتحه من الأيقونة وفعّل الإشعارات.
+            </div>
+          </div>
+        ) : (
+          <>
+            {access?.reason === 'expired' && (
+              <div className="card"><b>انتهى اشتراكك</b> <span className="muted">بتاريخ <span className="ltr">{day(access.until)}</span>. جدّده من تحت.</span></div>
+            )}
+
+            <h2>مجاناً لعملائنا</h2>
+            <div className="card grid">
+              <div className="muted" style={{ lineHeight: 1.8 }}>
+                إذا عندك حساب تداول فعّال تحت وكالة موقع توصيات، أو فتحت حساب جديد تحت وكالتنا، التنبيهات مجانية إلك.
+              </div>
+              {profile.activation_requested_at ? (
+                <div className="note">طلب التفعيل وصلنا ✅ فريقنا بيراجعه، وبعد التفعيل بتقدر تفتح التنبيهات من هون.
+                  <div style={{ marginTop: 8 }}><a className="btn ghost" href={wa('مرحبا، بعتت طلب تفعيل لتطبيق التنبيهات. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">سرّع التفعيل على واتساب</a></div>
+                </div>
+              ) : (
+                <form action={requestActivation} className="grid">
+                  <label>شركة التداول
+                    <select name="broker" defaultValue="Exness">{BROKERS.map((b) => <option key={b}>{b}</option>)}</select>
+                  </label>
+                  <label>رقم حساب التداول (MT4 / MT5)
+                    <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required />
+                  </label>
+                  <button className="btn">أرسل طلب التفعيل</button>
+                </form>
+              )}
+              <a className="btn ghost" href={wa('مرحبا، بدي افتح حساب تداول تحت وكالة موقع توصيات لأحصل على تطبيق التنبيهات مجاناً.')} target="_blank" rel="noopener">افتح حساب تحت وكالتنا</a>
+            </div>
+
+            <h2>أو اشتراك مدفوع</h2>
+            <div className="card grid">
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <b style={{ fontSize: 20 }} className="ltr">${plan?.price_usd ?? '—'}</b>
+                <span className="muted">لمدة {plan?.days ?? 30} يوم · الدفع بالكريبتو</span>
+              </div>
+              {wallets.length === 0 ? (
+                <a className="btn" href={wa('مرحبا، بدي اشترك بتطبيق تنبيهات البيفوت. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب للدفع</a>
+              ) : (
+                <>
+                  <ol style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.9, color: 'var(--soft)', fontSize: 14 }}>
+                    <li>حوّل <b className="ltr">{plan.price_usd} USDT</b> بالضبط على العنوان تحت، <b>على نفس الشبكة المكتوبة</b>. التحويل على شبكة غلط بيضيع.</li>
+                    <li>انسخ رقم العملية (TXID / Hash) من محفظتك وحطّه هون.</li>
+                    <li>منتأكد منه على البلوكتشين ومنفعّل اشتراكك.</li>
+                  </ol>
+                  {wallets.map((w) => (
+                    <div key={w.network} className="note grid" style={{ gap: 6 }}>
+                      <b>{w.network}</b>
+                      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                        <span className="ltr" style={{ wordBreak: 'break-all', fontFamily: 'monospace', fontSize: 13 }}>{w.address}</span>
+                        <CopyButton text={w.address} />
+                      </div>
+                    </div>
+                  ))}
+                  <form action={submitPayment} className="grid">
+                    <label>الشبكة اللي حوّلت عليها
+                      <select name="network" defaultValue={wallets[0].network}>{wallets.map((w) => <option key={w.network}>{w.network}</option>)}</select>
+                    </label>
+                    <label>رقم العملية (TXID)
+                      <input name="txid" dir="ltr" required minLength={20} maxLength={120} pattern="[A-Za-z0-9]{20,120}" title="انسخ رقم العملية كامل" autoComplete="off" />
+                    </label>
+                    <button className="btn" disabled={pendingPay} style={pendingPay ? { opacity: 0.5 } : undefined}>{pendingPay ? 'دفعتك قيد المراجعة' : 'أرسل رقم العملية'}</button>
+                  </form>
+                  <div className="muted">بدك تدفع بعملة أو شبكة ثانية؟ <a href={wa('مرحبا، بدي اشترك بتطبيق التنبيهات بالكريبتو. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب</a>.</div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {payments?.length > 0 && (
+          <>
+            <h2>مدفوعاتك</h2>
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <table>
+                <thead><tr><th>التاريخ</th><th>المبلغ</th><th>الشبكة</th><th>TXID</th><th>الحالة</th></tr></thead>
+                <tbody>{payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="ltr">{day(p.created_at)}</td>
+                    <td className="ltr">${p.amount_usd}</td>
+                    <td>{p.network}</td>
+                    <td className="ltr" style={{ fontFamily: 'monospace' }}>{p.txid.slice(0, 8)}…{p.txid.slice(-6)}</td>
+                    <td className={p.status === 'approved' ? 'ok' : p.status === 'rejected' ? 'bad' : 'muted'}>
+                      {STATUS_AR[p.status]}{p.status === 'rejected' && p.note ? ` — ${p.note}` : ''}
+                    </td>
+                  </tr>))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </main>
+    </>
+  );
+}

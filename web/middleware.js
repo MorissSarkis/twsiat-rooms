@@ -15,8 +15,10 @@ export async function middleware(request) {
   });
   const { data: { user } } = await sb.auth.getUser();
   const p = request.nextUrl.pathname;
-  if (!user && ['/rooms', '/admin', '/community', '/levels'].some((x) => p.startsWith(x))) {
-    return NextResponse.redirect(new URL('/login', siteOrigin(request)));
+  if (!user && ['/rooms', '/admin', '/community', '/levels', '/alerts'].some((x) => p.startsWith(x))) {
+    const to = new URL('/login', siteOrigin(request));
+    if (p !== '/rooms') to.searchParams.set('next', p);
+    return NextResponse.redirect(to);
   }
   return response;
 }

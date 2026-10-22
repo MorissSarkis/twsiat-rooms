@@ -15,6 +15,7 @@ import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from access import Directory  # noqa: E402
 from feeds import make_feed  # noqa: E402
 from notifier import Telegram, WhatsApp  # noqa: E402
 from server import PushHub, create_app  # noqa: E402
@@ -48,7 +49,11 @@ def build(cfg, data_dir):
         sinks.append(TextSink(WhatsApp(w.get("phone_number_id"), w.get("access_token"), w.get("to"),
                                        w.get("template_name", "pivot_alert"), w.get("template_lang", "en"))))
     service = AlertService(cfg, make_feed(cfg.get("feed", "mt5"), cfg), data_dir, sinks)
-    app = create_app(service, hub, str(app_cfg.get("password", "")), data_dir)
+    # members of rooms.twsiat.com sign in with their own account (only with the Supabase feed / settings)
+    directory = Directory(data_dir) if cfg.get("feed") == "supabase" else None
+    app = create_app(service, hub, str(app_cfg.get("password", "")), data_dir, directory,
+                     os.environ.get("ROOMS_URL") or app_cfg.get("rooms_url", "https://rooms.twsiat.com"))
+    app.state.directory = directory
     return service, hub, app
 
 
@@ -81,6 +86,11 @@ def main():
 
     service, hub, app = build(cfg, data_dir)
     threading.Thread(target=service.run_forever, daemon=True, name="engine").start()
+    directory = app.state.directory
+    if directory and directory.enabled:   # re-check members' access every 10 minutes
+        sessions = app.state.sessions
+        threading.Thread(target=directory.run_forever, args=(lambda: sessions.uids() | hub.uids(),),
+                         daemon=True, name="access").start()
 
     import uvicorn
     uvicorn.run(app, host=app_cfg.get("host", "0.0.0.0"), port=args.port or app_cfg.get("port", 8080),

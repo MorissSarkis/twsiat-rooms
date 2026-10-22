@@ -16,6 +16,7 @@ export async function requestActivation(formData) {
     activation_requested_at: new Date().toISOString(),
   }).eq('id', user.id);
   revalidatePath('/rooms');
+  revalidatePath('/alerts');
 }
 
 export async function acceptDisclaimer(formData) {

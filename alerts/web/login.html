@@ -29,6 +29,13 @@
            border-radius:12px; background:var(--accent); color:#1a1205; cursor:pointer; }
   button:disabled { opacity:.6; }
   .err { color:var(--red); font-size:14px; min-height:20px; margin-top:12px; text-align:center; }
+  a.member { display:block; text-align:center; text-decoration:none; font-weight:600; font-size:16px; padding:14px;
+             border-radius:12px; background:var(--accent); color:#1a1205; }
+  .hint { font-size:13px; color:var(--muted); text-align:center; line-height:1.7; margin:12px 0 0; }
+  details { margin-top:28px; } summary { color:var(--muted); font-size:13px; text-align:center; cursor:pointer; list-style:none; }
+  summary::-webkit-details-marker { display:none; }
+  details[open] summary { margin-bottom:14px; }
+  details button { background:transparent; color:var(--text); border:1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -36,12 +43,23 @@
     <img class="logo" src="/icon-192.png" alt="">
     <h1>تنبيهات البيفوت</h1>
     <p>الدعم والمقاومة لحظة بلحظة</p>
-    <label for="pw">كلمة السر</label>
-    <input id="pw" type="password" autocomplete="current-password" required autofocus>
-    <button id="b" type="submit">دخول</button>
+    <div id="memberBox" hidden>
+      <a class="member" id="memberLink" href="https://rooms.twsiat.com/alerts">دخول بحساب موقع توصيات</a>
+      <div class="hint">مجاناً لعملاء وكالة موقع توصيات، أو باشتراك شهري.</div>
+    </div>
+    <details id="pwBox">
+      <summary>دخول الإدارة بكلمة السر</summary>
+      <label for="pw">كلمة السر</label>
+      <input id="pw" type="password" autocomplete="current-password" required>
+      <button id="b" type="submit">دخول</button>
+    </details>
     <div class="err" id="err"></div>
   </form>
 <script>
+fetch("/config.json").then(r => r.json()).then(c => {
+  if (c.member_login) { document.getElementById("memberBox").hidden = false; document.getElementById("memberLink").href = c.members; }
+  else { document.getElementById("pwBox").open = true; }
+}).catch(() => { document.getElementById("pwBox").open = true; });
 document.getElementById("f").addEventListener("submit", async (e) => {
   e.preventDefault();
   const b = document.getElementById("b"), err = document.getElementById("err");

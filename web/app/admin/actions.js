@@ -47,3 +47,23 @@ export async function promoteCommunity(formData) {
   await sb.rpc('promote_community', { p_id: Number(formData.get('id')) });
   revalidatePath('/admin');
 }
+
+// ---------- pivot alerts subscriptions (crypto) ----------
+export async function approvePayment(formData) {
+  const { sb } = await staff();
+  const days = Number(formData.get('days'));
+  await sb.rpc('alerts_approve_payment', { p_id: Number(formData.get('id')), p_days: days > 0 ? days : null });
+  revalidatePath('/admin');
+}
+
+export async function rejectPayment(formData) {
+  const { sb } = await staff();
+  await sb.rpc('alerts_reject_payment', { p_id: Number(formData.get('id')), p_note: String(formData.get('note') || '') || null });
+  revalidatePath('/admin');
+}
+
+export async function grantAlerts(formData) {
+  const { sb } = await staff();
+  await sb.rpc('alerts_grant_days', { p_user: String(formData.get('id')), p_days: Number(formData.get('days')) });
+  revalidatePath('/admin');
+}

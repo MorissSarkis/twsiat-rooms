@@ -16,7 +16,10 @@ export default function Login() {
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
+  const [next, setNext] = useState('/rooms');   // where to go after login (only same-site paths)
   useEffect(() => {
+    const n = new URLSearchParams(location.search).get('next');
+    if (n && /^\/[a-z]/.test(n)) setNext(n);
     if (new URLSearchParams(location.search).get('e') === 'link') setErr('رابط التفعيل انتهى أو استُعمل قبل. سجّل دخول، أو اطلب رابط جديد.');
   }, []);
 
@@ -31,11 +34,11 @@ export default function Login() {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       setBusy(false);
       if (error) return setErr('الإيميل أو كلمة السر غير صحيحة');
-      router.push('/rooms'); router.refresh();
+      router.push(next); router.refresh();
     } else {
       const { error } = await sb.auth.signUp({
         email, password,
-        options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback` },
+        options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
       });
       setBusy(false);
       if (error) return setErr(error.message.includes('Password') ? 'كلمة السر لازم تكون 6 أحرف على الأقل' : 'ما قدرنا ننشئ الحساب، جرّب مرة ثانية');
@@ -44,7 +47,7 @@ export default function Login() {
   }
 
   async function google() {
-    await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/auth/callback` } });
+    await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` } });
   }
 
   return (

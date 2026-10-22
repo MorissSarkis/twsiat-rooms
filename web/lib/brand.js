@@ -4,3 +4,5 @@ export const WHATSAPP_URL = 'https://wa.me/97145616847';
 export const wa = (text) => `${WHATSAPP_URL}?text=${encodeURIComponent(text)}`;
 // Partner brokers (IB), in priority order — shown in the activation form.
 export const BROKERS = ['Exness', 'AvaTrade', 'XTB', 'ATFX', 'Windsor Brokers', 'Equiti', 'Taurex'];
+// The pivot alerts app (separate server, login handed over with a one-time code).
+export const ALERTS_URL = process.env.NEXT_PUBLIC_ALERTS_URL || 'https://alerts.twsiat.com';

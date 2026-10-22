@@ -1,7 +1,7 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { symName, fmt, STATE_AR, when } from '@/lib/format';
-import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity } from './actions';
+import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,19 @@ export default async function Admin() {
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
   const { data: shadow } = await sb.rpc('shadow_stats');
+  // pivot alerts: crypto payments waiting + current paid subscribers
+  const [{ data: pays }, { data: subs }] = canDecide ? await Promise.all([
+    sb.from('alerts_payments').select('*').eq('status', 'pending').order('created_at'),
+    sb.from('profiles').select('id,display_name,username,alerts_paid_until').not('alerts_paid_until', 'is', null)
+      .gt('alerts_paid_until', new Date(Date.now() - 30 * 864e5).toISOString()).order('alerts_paid_until'),
+  ]) : [{ data: [] }, { data: [] }];
+  const payIds = [...new Set((pays || []).map((p) => p.user_id))];
+  const { data: payers } = payIds.length ? await sb.from('profiles').select('id,display_name,username,ib_verified').in('id', payIds) : { data: [] };
+  const who = Object.fromEntries((payers || []).map((p) => [p.id, p]));
+  const explorer = (net, tx) => /TRC20|TRON/i.test(net) ? `https://tronscan.org/#/transaction/${tx}`
+    : /BEP20|BSC/i.test(net) ? `https://bscscan.com/tx/${tx}`
+    : /ERC20|ETH/i.test(net) ? `https://etherscan.io/tx/${tx}`
+    : /BTC|BITCOIN/i.test(net) ? `https://mempool.space/tx/${tx}` : null;
   const { data: cands } = await sb.rpc('community_candidates', { p_min_trades: 20 });
   const live = Object.fromEntries(await Promise.all((pending || []).map(async (s) => {
     const { data } = await sb.rpc('suggestion_live_check', { p_id: s.id });
@@ -49,6 +62,62 @@ export default async function Admin() {
                 </div>
               </form>
             ))}
+          </>
+        )}
+
+        {canDecide && (
+          <>
+            <h2>اشتراكات التنبيهات (كريبتو) {pays?.length ? <span className="badge sell">{pays.length}</span> : '(0)'}</h2>
+            {(!pays || pays.length === 0) && <div className="card muted">ما في دفعات بانتظار المراجعة.</div>}
+            {pays?.map((p) => {
+              const u = who[p.user_id] || {};
+              const link = explorer(p.network, p.txid);
+              return (
+                <div key={p.id} className="card hl grid">
+                  <div className="row" style={{ justifyContent: 'space-between' }}>
+                    <div><b>{u.display_name || u.username || '—'}</b>{u.ib_verified && <span className="muted"> · عميل وكالة (مجاني أصلاً)</span>}
+                      <div className="muted">{p.network} · <span className="ltr">${p.amount_usd}</span> · <span>{p.days} يوم</span> · <span className="ltr">{when(p.created_at)}</span></div></div>
+                    {link && <a className="btn ghost" href={link} target="_blank" rel="noopener">افحص التحويل ↗</a>}
+                  </div>
+                  <div className="ltr muted" style={{ wordBreak: 'break-all', fontFamily: 'monospace' }}>{p.txid}</div>
+                  <div className="muted">تأكد: المبلغ كامل، على عنوان محفظتنا، والعملية ناجحة (Confirmed).</div>
+                  <div className="grid g2">
+                    <form action={approvePayment} className="row">
+                      <input type="hidden" name="id" value={p.id} />
+                      <input name="days" type="number" defaultValue={p.days} min={1} max={3660} style={{ width: 90 }} dir="ltr" />
+                      <button className="btn green">وافق وفعّل</button>
+                    </form>
+                    <form action={rejectPayment} className="row">
+                      <input type="hidden" name="id" value={p.id} />
+                      <input name="note" placeholder="السبب (بيشوفه العميل)" style={{ flex: 1 }} />
+                      <button className="btn red">ارفض</button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+            {subs?.length > 0 && (
+              <div className="card" style={{ overflowX: 'auto' }}>
+                <table>
+                  <thead><tr><th>المشترك</th><th>لغاية</th><th></th></tr></thead>
+                  <tbody>{subs.map((s) => {
+                    const live = new Date(s.alerts_paid_until) > new Date();
+                    return (
+                      <tr key={s.id}>
+                        <td>{s.display_name || s.username || '—'}</td>
+                        <td className={live ? 'ok' : 'bad'}><span className="ltr">{when(s.alerts_paid_until)}</span>{live ? '' : ' (منتهي)'}</td>
+                        <td>
+                          <div className="row" style={{ flexWrap: 'nowrap' }}>
+                            <form action={grantAlerts}><input type="hidden" name="id" value={s.id} /><input type="hidden" name="days" value="30" /><button className="btn ghost" style={{ minHeight: 32, padding: '0 10px' }}>+30 يوم</button></form>
+                            {live && <form action={grantAlerts}><input type="hidden" name="id" value={s.id} /><input type="hidden" name="days" value="0" /><button className="btn red" style={{ minHeight: 32, padding: '0 10px' }}>إيقاف</button></form>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}</tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
 

@@ -9,6 +9,7 @@ export default function TopBar({ profile }) {
         {profile && <Link href="/rooms">غرفتي</Link>}
         {profile && <Link href="/community">غرفة المجتمع</Link>}
         {profile && <Link href="/levels">المستويات</Link>}
+        {profile && <Link href="/alerts">التنبيهات</Link>}
         <Link href="/record">سجل الأداء</Link>
         {staff && <Link href="/admin">الباك أوفيس</Link>}
         {profile ? <form action="/auth/signout" method="post"><button className="btn ghost" style={{minHeight:34,padding:'0 12px'}}>خروج</button></form>

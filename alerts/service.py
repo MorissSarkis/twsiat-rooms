@@ -45,14 +45,42 @@ class AlertService:
                 s = json.load(f)
         except Exception:
             s = {}
-        for k in ("engine", "overrides", "last_trend", "settings"):
+        for k in ("engine", "overrides", "last_trend", "settings", "users"):
             s.setdefault(k, {})
         s.setdefault("history", [])
-        st = s["settings"]
+        self._defaults(s["settings"])          # "settings" = the owner (password login), as before
+        return s
+
+    def _defaults(self, st):
         st.setdefault("muted", [])
         st.setdefault("levels", list(self.cfg.get("levels", LEVELS)))
         st.setdefault("approach", bool(self.cfg.get("approach_alerts", True)))
-        return s
+        return st
+
+    # ---------- each person's own choices ----------
+    def user_settings(self, uid="owner"):
+        with self.lock:
+            if uid in (None, "", "owner"):
+                return self.state["settings"]
+            return self._defaults(self.state["users"].setdefault(uid, {}))
+
+    def visible(self, uid, item):
+        """Does this alert belong in this person's list? (their levels / approach choice; tests only to the sender)"""
+        if item.get("kind") == "test":
+            return item.get("to", "owner") == (uid or "owner")
+        s = self.user_settings(uid)
+        if item.get("kind") == "NEAR" and not s["approach"]:
+            return False
+        lv = item.get("level")
+        if item.get("kind") in ("CROSS", "NEAR", "STOP") and lv and not any(x in s["levels"] for x in str(lv).split(",")):
+            return False
+        return True
+
+    def wants(self, uid, item):
+        """...and should it ring their phone? (muted assets stay in the list but are silent)"""
+        if item.get("kind") != "test" and item.get("asset") in self.user_settings(uid)["muted"]:
+            return False
+        return self.visible(uid, item)
 
     def save(self):
         with self.lock:
@@ -107,11 +135,15 @@ class AlertService:
         if extra:
             item.update(extra)
         with self.lock:
-            self.state["history"].insert(0, item)
-            del self.state["history"][self.cfg.get("history_size", 500):]
-        if asset in self.state["settings"]["muted"] and kind != "test":
-            return item
+            h = self.state["history"]
+            if kind == "test":     # keep only each person's latest test, so tests never push real alerts out
+                h[:] = [i for i in h if not (i.get("kind") == "test" and i.get("to", "owner") == item.get("to", "owner"))]
+            h.insert(0, item)
+            del h[self.cfg.get("history_size", 1000):]
         for s in self.sinks:
+            # the phone hub filters per person; other channels (Telegram) follow the owner's choices
+            if not getattr(s, "per_user", False) and not self.wants("owner", item):
+                continue
             try:
                 s.deliver(item)
             except Exception as ex:
@@ -121,7 +153,6 @@ class AlertService:
     # ---------- one polling round ----------
     def step(self):
         refresh = self.cfg.get("refresh_minutes", 15) * 60
-        settings = self.state["settings"]
         mode = self.cfg.get("mode", "all")
         for a in self.assets:
             name, sym = a["name"], None
@@ -149,8 +180,8 @@ class AlertService:
                 self.errors.pop(name, None)
                 trend, anchor, manual = self.effective_trend(name)
                 if mode == "all":
-                    events = self.engine.evaluate_all(name, price, ctx["levels"], trend, ctx["atr"],
-                                                      tuple(settings["levels"]), settings["approach"])
+                    # every level for everyone; each person's choices are applied on delivery
+                    events = self.engine.evaluate_all(name, price, ctx["levels"], trend, ctx["atr"], LEVELS, True)
                 else:
                     events = self.engine.evaluate(name, price, ctx["levels"], trend, ctx["atr"], anchor)
                 crosses = [e for e in events if e.kind == "CROSS"]
@@ -189,8 +220,9 @@ class AlertService:
             time.sleep(max(1.0, poll - (time.time() - t0)))
 
     # ---------- what the app reads ----------
-    def snapshot(self):
+    def snapshot(self, uid="owner"):
         out = []
+        settings = self.user_settings(uid)
         with self.lock:
             for a in self.assets:
                 name = a["name"]
@@ -198,7 +230,7 @@ class AlertService:
                 qt = getattr(self.feed, "quote_time", None)
                 item = {"name": name, "group": a.get("group", ""), "price": price,
                         "quote_t": qt(self._resolved[name]) if qt and name in self._resolved else None,
-                        "muted": name in self.state["settings"]["muted"],
+                        "muted": name in settings["muted"],
                         "error": self.errors.get(name)}
                 if ctx:
                     trend, anchor, manual = self.effective_trend(name)
@@ -218,11 +250,12 @@ class AlertService:
                         above = [k for k in LEVELS if levels[k] > price]
                         item["zone"] = f"{above[-1]}" if above else "above R3"
                 out.append(item)
-        return {"assets": out, "last_poll": self.last_poll, "settings": self.state["settings"]}
+        return {"assets": out, "last_poll": self.last_poll, "settings": settings}
 
-    def history(self, limit=200):
+    def history(self, limit=200, uid="owner"):
         with self.lock:
-            return self.state["history"][:limit]
+            items = list(self.state["history"])
+        return [i for i in items if self.visible(uid, i)][:limit]
 
     # ---------- changes from the app ----------
     def set_override(self, name, trend, anchor):
@@ -238,9 +271,9 @@ class AlertService:
             self.state["overrides"].pop(name, None)
         self.save()
 
-    def update_settings(self, muted=None, levels=None, approach=None):
+    def update_settings(self, muted=None, levels=None, approach=None, uid="owner"):
+        s = self.user_settings(uid)
         with self.lock:
-            s = self.state["settings"]
             if muted is not None:
                 s["muted"] = [m for m in muted if any(a["name"] == m for a in self.assets)]
             if levels is not None:

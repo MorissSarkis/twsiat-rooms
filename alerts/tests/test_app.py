@@ -64,26 +64,36 @@ def test_manual_bottom_set_reject_and_clear():
     assert not gold["manual"]
 
 
+def phones(hub, *uids):
+    """register one fake phone per person; returns {uid: [items that rang]}"""
+    rang = {u: [] for u in uids}
+    for u in uids:
+        hub.add({"endpoint": f"https://push.example/{u}", "keys": {"p256dh": "x", "auth": "y"}}, "", u)
+    hub._send_one = lambda sub, data, urgency: rang[sub["uid"]].append(data)
+
+    class Now:     # run sends inline
+        def submit(self, fn, *a):
+            fn(*a)
+    hub.pool = Now()
+    return rang
+
+
 def test_test_alert_lands_in_history_and_reaches_devices():
     svc, hub, c = make()
-    sent = []
-    hub.deliver = lambda item: sent.append(item)
-    svc.sinks = [hub]
+    rang = phones(hub, "owner")
     c.post("/api/login", json={"password": "pw-123"})
     c.post("/api/test")
-    assert sent and sent[0]["title"].startswith("🔔")
+    assert rang["owner"] and rang["owner"][0]["title"].startswith("🔔")
     assert c.get("/api/alerts").json()["alerts"][0]["kind"] == "test"
 
 
 def test_muted_asset_not_pushed_but_kept_in_history():
     svc, hub, c = make()
-    sent = []
-    hub.deliver = lambda item: sent.append(item)
-    svc.sinks = [hub]
+    rang = phones(hub, "owner")
     svc.update_settings(muted=["GOLD"])
     svc._emit("GOLD", "t", "b", "buy", "CROSS", "S1")
     svc._emit("EUR/USD", "t", "b", "buy", "CROSS", "S1")
-    assert [i["asset"] for i in sent] == ["EUR/USD"]
+    assert [i["tag"].split("-")[0] for i in rang["owner"]] == ["EUR/USD"]
     assert [h["asset"] for h in svc.history(2)] == ["EUR/USD", "GOLD"]
 
 
@@ -136,3 +146,110 @@ def test_daily_change_percent_in_state():
     c.post("/api/login", json={"password": "pw-123"})
     gold = next(a for a in c.get("/api/state").json()["assets"] if a["name"] == "GOLD")
     assert isinstance(gold["change_pct"], float)
+
+
+# ---------- members: sign-in from rooms.twsiat.com, own settings, access ----------
+class FakeDirectory:
+    enabled = True
+
+    def __init__(self):
+        self.people = {"u-ib": {"ok": True, "reason": "ib", "role": "client", "name": "Sami"},
+                       "u-paid": {"ok": True, "reason": "paid", "role": "client", "name": "Rami",
+                                  "until": "2999-01-01T00:00:00+00:00"},
+                       "u-boss": {"ok": True, "reason": "staff", "role": "manager", "name": "Boss"}}
+        self.codes = {"code1": "u-ib", "code2": "u-paid", "code3": "u-boss", "code4": "u-old"}
+
+    def redeem(self, code):
+        uid = self.codes.pop(code, None)
+        if uid is None:
+            return None
+        return {"user_id": uid, "name": self.info(uid).get("name"), "access": self.info(uid)}
+
+    def info(self, uid):
+        return self.people.get(uid, {"ok": False, "reason": "expired"})
+
+    def ok(self, uid):
+        return self.info(uid)["ok"]
+
+    def is_admin(self, uid):
+        return self.info(uid).get("role") in ("manager", "admin")
+
+
+def make_members():
+    from server import create_app
+    svc, hub, _ = make()
+    d = FakeDirectory()
+    app = create_app(svc, hub, "pw-123", svc.dir, d, "https://rooms.example")
+    return svc, hub, d, app
+
+
+def member(app, code):
+    c = TestClient(app)
+    r = c.get(f"/auth?code={code}", follow_redirects=False)
+    return c, r
+
+
+def test_member_code_signs_in_once():
+    _, _, _, app = make_members()
+    c, r = member(app, "code1")
+    assert r.status_code == 302 and r.headers["location"] == "/"
+    assert c.get("/api/state").json()["me"]["reason"] == "ib"
+    c2, r2 = member(app, "code1")                    # used already
+    assert r2.status_code == 400 and c2.get("/api/state").status_code == 401
+
+
+def test_no_access_goes_to_expired_page():
+    _, _, _, app = make_members()
+    c, r = member(app, "code4")
+    assert r.status_code == 302 and r.headers["location"] == "/expired"
+    assert "rooms.example/alerts" in c.get("/expired").text
+
+
+def test_each_member_has_own_settings_and_alerts():
+    svc, hub, d, app = make_members()
+    a, _ = member(app, "code1")
+    b, _ = member(app, "code2")
+    rang = phones(hub, "u-ib", "u-paid")
+    a.post("/api/settings", json={"muted": ["GOLD"], "levels": ["S1"], "approach": False})
+    assert b.get("/api/state").json()["settings"]["levels"] == list(("R3", "R2", "R1", "P", "S1", "S2", "S3"))
+    svc._emit("GOLD", "t", "b", "down", "CROSS", "S1")
+    svc._emit("EUR/USD", "t", "b", "down", "CROSS", "R2")
+    svc._emit("EUR/USD", "t", "b", "info", "NEAR", "S1")
+    assert len(rang["u-ib"]) == 0                    # GOLD muted, R2 not chosen, approach off
+    assert len(rang["u-paid"]) == 3
+    assert [x["asset"] for x in a.get("/api/alerts").json()["alerts"]] == ["GOLD"]   # muted stays in the list
+    a.post("/api/test")
+    assert len(rang["u-ib"]) == 1 and len(rang["u-paid"]) == 3     # test only to the sender
+    assert all(x["kind"] != "test" for x in b.get("/api/alerts").json()["alerts"])
+
+
+def test_expired_member_stops_ringing_and_is_sent_to_renew():
+    svc, hub, d, app = make_members()
+    c, _ = member(app, "code2")
+    rang = phones(hub, "u-paid")
+    svc._emit("EUR/USD", "t", "b", "down", "CROSS", "S1")
+    d.people["u-paid"] = {"ok": False, "reason": "expired"}
+    svc._emit("EUR/USD", "t", "b", "down", "CROSS", "S2")
+    assert len(rang["u-paid"]) == 1
+    assert c.get("/api/state").status_code == 403
+    assert c.get("/", follow_redirects=False).headers["location"] == "/expired"
+
+
+def test_only_team_sets_bottom_top():
+    svc, hub, d, app = make_members()
+    client, _ = member(app, "code1")
+    boss, _ = member(app, "code3")
+    price = svc.prices["GOLD"]
+    body = {"asset": "GOLD", "trend": "up", "anchor": price * 0.9}
+    assert client.post("/api/override", json=body).status_code == 403
+    assert boss.post("/api/override", json=body).status_code == 200
+    assert boss.get("/api/state").json()["me"]["admin"] is True
+    assert client.get("/api/state").json()["me"]["admin"] is False
+
+
+def test_old_password_sessions_still_work(tmp_path):
+    import json
+    from server import Sessions
+    (tmp_path / "sessions.json").write_text(json.dumps({"tok": 9e12}))
+    s = Sessions(str(tmp_path))
+    assert s.uid("tok") == "owner"
