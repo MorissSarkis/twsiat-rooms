@@ -29,6 +29,8 @@ export default async function Admin() {
   const payIds = [...new Set((pays || []).map((p) => p.user_id))];
   const { data: payers } = payIds.length ? await sb.from('profiles').select('id,display_name,username,ib_verified').in('id', payIds) : { data: [] };
   const who = Object.fromEntries((payers || []).map((p) => [p.id, p]));
+  const mailIds = [...new Set([...(queue || []).map((c) => c.id), ...payIds])];
+  const { data: emails } = canDecide && mailIds.length ? await sb.rpc('admin_emails', { p_ids: mailIds }) : { data: {} };
   const explorer = (net, tx) => /TRC20|TRON/i.test(net) ? `https://tronscan.org/#/transaction/${tx}`
     : /BEP20|BSC/i.test(net) ? `https://bscscan.com/tx/${tx}`
     : /ERC20|ETH/i.test(net) ? `https://etherscan.io/tx/${tx}`
@@ -45,7 +47,10 @@ export default async function Admin() {
       <main className="wrap grid">
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <h1>الباك أوفيس</h1>
-          <a className="btn" href="/admin/new">+ توصية من المحلل</a>
+          <div className="row">
+            {canDecide && <a className="btn ghost" href="/admin/members">الأعضاء</a>}
+            <a className="btn" href="/admin/new">+ توصية من المحلل</a>
+          </div>
         </div>
 
         {canDecide && (
@@ -55,7 +60,7 @@ export default async function Admin() {
             {queue?.map((c) => (
               <form key={c.id} action={verifyClient} className="card hl row" style={{ justifyContent: 'space-between' }}>
                 <input type="hidden" name="id" value={c.id} />
-                <div><b>{c.display_name}</b><div className="muted">{c.broker} · <span className="ltr">{c.broker_account}</span> · {when(c.activation_requested_at)}</div></div>
+                <div><b>{c.display_name}</b>{emails?.[c.id] && <div className="ltr muted" style={{ textAlign: 'right' }}>{emails[c.id]}</div>}<div className="muted">{c.broker} · <span className="ltr">{c.broker_account}</span> · {when(c.activation_requested_at)}</div></div>
                 <div className="row">
                   <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
                   <button className="btn">فعّل</button>
@@ -76,6 +81,7 @@ export default async function Admin() {
                 <div key={p.id} className="card hl grid">
                   <div className="row" style={{ justifyContent: 'space-between' }}>
                     <div><b>{u.display_name || u.username || '—'}</b>{u.ib_verified && <span className="muted"> · عميل وكالة (مجاني أصلاً)</span>}
+                      {emails?.[p.user_id] && <div className="ltr muted" style={{ textAlign: 'right' }}>{emails[p.user_id]}</div>}
                       <div className="muted">{p.network} · <span className="ltr">${p.amount_usd}</span> · <span>{p.days} يوم</span> · <span className="ltr">{when(p.created_at)}</span></div></div>
                     {link && <a className="btn ghost" href={link} target="_blank" rel="noopener">افحص التحويل ↗</a>}
                   </div>
