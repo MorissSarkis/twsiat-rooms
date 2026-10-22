@@ -77,6 +77,7 @@ export default async function Members({ searchParams }) {
                   {m.broker} · <span className="ltr">{m.broker_account}</span>
                   {m.balance_usd != null && <> · الرصيد <span className="ltr">${m.balance_usd}</span></>}
                   {m.room && <> · غرفة {m.room}</>}
+                  {m.verified_at && <> · فعّله {m.verified_by_name || 'الإدارة'} <span className="ltr">{when(m.verified_at)}</span></>}
                 </div>
               )}
               <div className="row" style={{ justifyContent: 'space-between' }}>
