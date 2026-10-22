@@ -352,7 +352,7 @@ function renderSheet() {
       <h3>الميل العام</h3>
       <p>${anchorLine || "النظام ما لقى ميل واضح."} صاعد طالما القاع صامد، وهابط طالما القمة صامدة.</p>
       ${S.me.admin ? `<div class="seg" id="segT"><button data-t="up" class="${t==="up"?"on up":""}">صاعد — القاع</button><button data-t="down" class="${t==="down"?"on down":""}">هابط — القمة</button></div>
-      <div class="field"><input id="anchorIn" inputmode="decimal" placeholder="مثلاً 4066" value="${a.manual ? a.anchor : ""}">
+      <div class="field"><input id="anchorIn" inputmode="decimal" placeholder="${t === "down" ? "اكتب سعر القمة" : "اكتب سعر القاع"} (اختياري)" value="${a.manual ? a.anchor : ""}">
         <button class="btn" id="saveAnchor">حفظ</button></div>
       ${a.manual ? `<button class="btn ghost" id="clearAnchor" style="margin-top:10px;width:100%">رجوع للتلقائي</button>` : ""}` : ""}
     </div>
