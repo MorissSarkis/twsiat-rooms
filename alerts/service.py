@@ -37,6 +37,7 @@ class AlertService:
         self.feed_name = cfg.get("feed", "mt5")
         self._resolved = {}
         self._retry_at = {}
+        self._last_ok = {}
 
     # ---------- persistence ----------
     def _load(self):
@@ -203,9 +204,13 @@ class AlertService:
                                f"{what}: {fmt(anchor, ctx['digits'])} · السعر: {fmt(price, ctx['digits'])}\n"
                                f"رجعنا للميل العام التلقائي", "break", "TREND")
             except Exception as ex:
-                if self.errors.get(name) != str(ex):      # log each problem once, not every 30 seconds
-                    log.warning("%s (%s): %s", name, sym, ex)
-                self.errors[name] = str(ex)
+                if self.errors.get(name) != str(ex) and self._last_ok.get(name, 0) < time.time() - 120:
+                    log.warning("%s (%s): %s", name, sym, ex)      # log each problem once, not every round
+                # a short database hiccup with a fresh price on screen: keep showing the price, no error
+                if time.time() - self._last_ok.get(name, 0) > 120:
+                    self.errors[name] = str(ex)
+                continue
+            self._last_ok[name] = time.time()
         self.last_poll = _now_iso()
         self.save()
 

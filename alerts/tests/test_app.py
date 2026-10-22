@@ -210,6 +210,7 @@ def test_each_member_has_own_settings_and_alerts():
     a, _ = member(app, "code1")
     b, _ = member(app, "code2")
     rang = phones(hub, "u-ib", "u-paid")
+    svc.state["history"].clear()                     # ignore alerts the simulated prices made during setup
     a.post("/api/settings", json={"muted": ["GOLD"], "levels": ["S1"], "approach": False})
     assert b.get("/api/state").json()["settings"]["levels"] == list(("R3", "R2", "R1", "P", "S1", "S2", "S3"))
     svc._emit("GOLD", "t", "b", "down", "CROSS", "S1")
@@ -253,3 +254,18 @@ def test_old_password_sessions_still_work(tmp_path):
     (tmp_path / "sessions.json").write_text(json.dumps({"tok": 9e12}))
     s = Sessions(str(tmp_path))
     assert s.uid("tok") == "owner"
+
+
+def test_brief_database_hiccup_does_not_show_errors():
+    svc, _, _ = make()
+    assert not svc.errors
+    real = svc.feed.price
+    svc.feed.price = lambda s: (_ for _ in ()).throw(RuntimeError("database not reachable"))
+    svc.step()
+    assert not svc.errors                              # prices were fine seconds ago: stay quiet
+    svc._last_ok = {k: 0 for k in svc._last_ok}        # ...but after 2 minutes of failures, show it
+    svc.step()
+    assert svc.errors
+    svc.feed.price = real
+    svc.step()
+    assert not svc.errors

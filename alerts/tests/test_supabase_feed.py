@@ -113,3 +113,11 @@ def test_weekend_gap_is_fine():
     rows = [[str(today - timedelta(days=3 + i)), 1, 2, 0.5, 1.5] for i in range(30)][::-1]
     f._rpc_once = lambda fn, p: rows if fn == "alerts_daily" else FakeFeed._rpc_once(f, fn, p)
     assert len(f.daily("XAUUSD", 40)) == 30
+
+
+def test_symbol_refresh_failure_keeps_last_list():
+    f = FakeFeed(live_age_s=5)
+    assert f.has_symbol("XAUUSD")
+    f._symbols_at = 0                                  # due for a refresh
+    f._rpc_once = lambda fn, p: (_ for _ in ()).throw(RuntimeError("HTTP 500 statement timeout"))
+    assert f.has_symbol("XAUUSD")                      # still known, no error
