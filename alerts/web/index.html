@@ -65,9 +65,9 @@
   /* level ladder: always low -> high from left to right */
   .ladder { position:relative; height:30px; margin:12px 4px 2px; direction:ltr; }
   .ladder .track { position:absolute; left:0; right:0; top:13px; height:4px; border-radius:2px;
-                   background:linear-gradient(90deg, rgba(38,198,118,.45), rgba(245,181,63,.45) 50%, rgba(239,83,80,.45)); }
+                   background:linear-gradient(90deg, rgba(239,83,80,.45), rgba(245,181,63,.45) 50%, rgba(38,198,118,.45)); }
   .ladder .tick { position:absolute; top:9px; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:var(--dim); }
-  .ladder .tick.S { background:var(--green); } .ladder .tick.R { background:var(--red); } .ladder .tick.P { background:var(--amber); height:16px; top:7px; }
+  .ladder .tick.S { background:var(--red); } .ladder .tick.R { background:var(--green); } .ladder .tick.P { background:var(--amber); height:16px; top:7px; }
   .ladder .lab { position:absolute; top:-3px; font-size:9.5px; color:var(--dim); transform:translateX(-50%); font-family:"IBM Plex Mono", monospace; }
   .ladder .mark { position:absolute; top:6px; width:18px; height:18px; margin-left:-9px; border-radius:50%;
                   background:#fff; border:4px solid var(--bg); box-shadow:0 0 0 1px rgba(255,255,255,.4); transition:left .6s ease; }
@@ -99,8 +99,8 @@
   #lvChips { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
   .lvchip { padding:9px 0; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--muted);
             font-family:"IBM Plex Mono", monospace; font-size:14px; cursor:pointer; }
-  .lvchip.on.S { background:var(--green-bg); color:var(--green); border-color:rgba(38,198,118,.4); }
-  .lvchip.on.R { background:var(--red-bg); color:var(--red); border-color:rgba(239,83,80,.4); }
+  .lvchip.on.S { background:var(--red-bg); color:var(--red); border-color:rgba(239,83,80,.4); }
+  .lvchip.on.R { background:var(--green-bg); color:var(--green); border-color:rgba(38,198,118,.4); }
   .lvchip.on.P { background:var(--amber-bg); color:var(--amber); border-color:rgba(245,181,63,.4); }
   /* bottom nav */
   nav { position:fixed; bottom:0; left:0; right:0; z-index:6; display:flex; background:rgba(21,29,39,.96); backdrop-filter:blur(10px);
@@ -122,7 +122,7 @@
   .lvtable td { padding:9px 4px; border-bottom:1px solid var(--line); font-size:14px; }
   .lvtable td:last-child { text-align:left; color:var(--muted); font-size:13px; }
   .lvtable tr.cur td { color:#fff; font-weight:700; background:var(--card2); }
-  .lvtable .S { color:var(--green); } .lvtable .R { color:var(--red); } .lvtable .P { color:var(--amber); }
+  .lvtable .S { color:var(--red); } .lvtable .R { color:var(--green); } .lvtable .P { color:var(--amber); }
   .field { display:flex; gap:8px; margin-top:10px; }
   .field input { flex:1; font:inherit; font-size:16px; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
                  background:var(--bg); color:var(--text); direction:ltr; min-width:0; }
