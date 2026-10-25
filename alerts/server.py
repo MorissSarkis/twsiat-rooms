@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
+import messages_en as EN
 import webpush
 from access import OWNER
 
@@ -34,6 +35,7 @@ class PushHub:
 
     def __init__(self, data_dir, subject):
         self.allow = lambda uid, item: True
+        self.localize = lambda uid, item: item          # each phone gets the alert in its owner's language
         self.path = os.path.join(data_dir, "subscriptions.json")
         self.vapid = webpush.Vapid(os.path.join(data_dir, "vapid.json"), subject)
         self.lock = threading.Lock()
@@ -67,16 +69,18 @@ class PushHub:
             self._save()
 
     def deliver(self, item):
-        data = {"title": item["title"], "body": item["body"], "tag": f"{item['asset']}-{item.get('level')}",
-                "action": item.get("action"), "id": item["id"], "url": "/#alerts"}
         urgency = "high" if item.get("action") in ("down", "up", "break") else "normal"
         for s in list(self.subs):
+            uid = s.get("uid", OWNER)
             try:
-                if not self.allow(s.get("uid", OWNER), item):
+                if not self.allow(uid, item):
                     continue
+                it = self.localize(uid, item)
             except Exception as e:
                 log.error("allow check failed: %s", e)
                 continue
+            data = {"title": it["title"], "body": it["body"], "tag": f"{it['asset']}-{it.get('level')}",
+                    "action": it.get("action"), "id": it["id"], "url": "/#alerts"}
             self.pool.submit(self._send_one, s, data, urgency)
 
     def _send_one(self, sub, data, urgency):
@@ -181,6 +185,7 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
 
     # a phone rings only while its owner has access, and only for what they chose
     hub.allow = lambda uid, item: access_ok(uid) and service.wants(uid, item)
+    hub.localize = lambda uid, item: service.localize(item, service.lang(uid))
 
     def who(req: Request):
         return sessions.uid(req.cookies.get(COOKIE))
@@ -231,8 +236,11 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
         return page("اشتراكك بالتنبيهات غير فعّال",
                     "التنبيهات مجانية لعملاء وكالة موقع توصيات، أو باشتراك شهري. "
                     "فعّل أو جدّد من صفحة التنبيهات بموقع الأعضاء، ورجع افتح التطبيق.",
-                    members, "فعّل أو جدّد الاشتراك",
-                    '<a class="g" href="/login">دخول بحساب ثاني</a>')
+                    members, "فعّل أو جدّد الاشتراك · Activate or renew",
+                    '<p dir="ltr" style="margin:22px 0 0">Your alerts subscription is not active. Alerts are free for Twsiat '
+                    'agency clients, or available with a monthly subscription. Activate or renew on the members site, '
+                    'then open the app again.</p>'
+                    '<a class="g" href="/login">دخول بحساب ثاني · Sign in with another account</a>')
 
     @app.get("/sw.js")
     def sw():
@@ -337,14 +345,14 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
     def test(req: Request):
         uid = need_auth(req)
         item = service._emit("TEST", "🔔 تنبيه تجريبي", "إذا وصلك هذا الإشعار، كل شي شغال تمام.", "info", "test",
-                             extra={"to": uid})
+                             extra={"to": uid, "en": {"title": EN.TEST_TITLE, "body": EN.TEST_BODY}})
         return {"ok": True, "devices": hub.count(uid), "id": item["id"]}
 
     @app.post("/api/settings")
     async def settings(req: Request):
         uid = need_auth(req)
         b = await req.json()
-        service.update_settings(b.get("muted"), b.get("levels"), b.get("approach"), uid=uid)
+        service.update_settings(b.get("muted"), b.get("levels"), b.get("approach"), uid=uid, lang=b.get("lang"))
         return {"ok": True, "settings": service.user_settings(uid)}
 
     # manual bottom/top: one for everyone, so the team sets it

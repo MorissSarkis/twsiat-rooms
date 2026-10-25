@@ -75,10 +75,10 @@
   .err { color:var(--red); font-size:12px; margin-top:6px; }
   /* alerts */
   .day { color:var(--muted); font-size:12px; margin:18px 2px 8px; font-weight:600; }
-  .al { background:var(--card); border:1px solid var(--line); border-right:4px solid var(--dim); border-radius:12px;
+  .al { background:var(--card); border:1px solid var(--line); border-inline-start:4px solid var(--dim); border-radius:12px;
         padding:12px 14px; margin-bottom:8px; }
-  .al.up { border-right-color:var(--green); } .al.down { border-right-color:var(--red); }
-  .al.break { border-right-color:var(--stop); background:rgba(255,107,107,.06); }
+  .al.up { border-inline-start-color:var(--green); } .al.down { border-inline-start-color:var(--red); }
+  .al.break { border-inline-start-color:var(--stop); background:rgba(255,107,107,.06); }
   .al .t { display:flex; justify-content:space-between; gap:10px; font-weight:600; }
   .al .time { color:var(--dim); font-size:12px; font-weight:400; flex:none; }
   .al .b { white-space:pre-line; color:#c8d3df; font-size:14px; margin-top:6px; line-height:1.6; }
@@ -133,13 +133,19 @@
            padding:10px 16px; border-radius:10px; font-size:14px; z-index:20; opacity:0; transition:opacity .2s; pointer-events:none; }
   .toast.show { opacity:1; }
   .hidden { display:none !important; }
+  [dir=ltr] .switch span::before { right:auto; left:3px; }
+  [dir=ltr] .switch input:checked + span::before { transform:translateX(18px); }
+  [dir=ltr] .lvtable td:last-child { text-align:right; }
+  .langbtn { font:inherit; font-size:12px; font-weight:600; background:transparent; color:var(--muted); border:1px solid var(--line);
+             border-radius:8px; padding:3px 8px; cursor:pointer; }
+  .langseg { display:flex; gap:8px; } .langseg .btn { flex:1; }
 </style>
 </head>
 <body>
 <header>
   <div class="hrow">
-    <h1>تنبيهات البيفوت</h1>
-    <div class="live"><span class="dot" id="dot"></span><span id="updated">جارِ التحميل…</span></div>
+    <h1 data-i18n="appName">تنبيهات البيفوت</h1>
+    <div class="live"><span class="dot" id="dot"></span><span id="updated">…</span><button class="langbtn" id="langToggle">EN</button></div>
   </div>
   <div class="chips" id="groups"></div>
 </header>
@@ -150,11 +156,11 @@
   <section id="tab-assets">
     <div class="sorter">
       <span id="count"></span>
-      <select id="sort" aria-label="ترتيب">
-        <option value="near">الأقرب لمستوى</option>
-        <option value="up">الأكثر ارتفاعاً اليوم</option>
-        <option value="down">الأكثر انخفاضاً اليوم</option>
-        <option value="list">حسب القائمة</option>
+      <select id="sort">
+        <option value="near" data-i18n="sortNear">الأقرب لمستوى</option>
+        <option value="up" data-i18n="sortUp">الأكثر ارتفاعاً اليوم</option>
+        <option value="down" data-i18n="sortDown">الأكثر انخفاضاً اليوم</option>
+        <option value="list" data-i18n="sortList">حسب القائمة</option>
       </select>
     </div>
     <div id="assets"></div>
@@ -164,31 +170,36 @@
 
   <section id="tab-settings" class="hidden">
     <div class="sec">
-      <h3>الإشعارات على هذا الجهاز</h3>
+      <h3 data-i18n="pushTitle">الإشعارات على هذا الجهاز</h3>
       <p id="pushStatus">…</p>
       <div class="row">
-        <button class="btn" id="enablePush">تفعيل الإشعارات</button>
-        <button class="btn ghost" id="testPush">إرسال تنبيه تجريبي</button>
+        <button class="btn" id="enablePush" data-i18n="enablePush">تفعيل الإشعارات</button>
+        <button class="btn ghost" id="testPush" data-i18n="testPush">إرسال تنبيه تجريبي</button>
       </div>
     </div>
     <div class="sec">
-      <h3>المستويات</h3>
-      <p>اختار المستويات اللي بدك تنبيه عليها (نزول أو طلوع).</p>
+      <h3 data-i18n="langTitle">اللغة</h3>
+      <p data-i18n="langHelp">لغة التطبيق والإشعارات.</p>
+      <div class="langseg"><button class="btn" id="langAr">العربية</button><button class="btn" id="langEn">English</button></div>
+    </div>
+    <div class="sec">
+      <h3 data-i18n="levelsTitle">المستويات</h3>
+      <p data-i18n="levelsHelp">اختار المستويات اللي بدك تنبيه عليها (نزول أو طلوع).</p>
       <div class="row" id="lvChips"></div>
       <div class="tog" style="margin-top:12px">
-        <div><div>تنبيه قبل الوصول</div><div style="color:var(--muted);font-size:13px">"السعر نازل باتجاه S1" قبل ما يوصله بشوي</div></div>
+        <div><div data-i18n="approachTitle">تنبيه قبل الوصول</div><div style="color:var(--muted);font-size:13px" data-i18n="approachHelp">"السعر نازل باتجاه S1" قبل ما يوصله بشوي</div></div>
         <label class="switch"><input type="checkbox" id="approach"><span></span></label>
       </div>
     </div>
     <div class="sec">
-      <h3>الأصول المكتومة</h3>
-      <p>أصل مكتوم ما بيبعت إشعار، بس تنبيهاته بتضل بالسجل. للكتم افتح الأصل من قائمة الأصول.</p>
+      <h3 data-i18n="mutedTitle">الأصول المكتومة</h3>
+      <p data-i18n="mutedHelp">أصل مكتوم ما بيبعت إشعار، بس تنبيهاته بتضل بالسجل. للكتم افتح الأصل من قائمة الأصول.</p>
       <div id="mutedList" style="color:var(--muted);font-size:14px"></div>
     </div>
     <div class="sec">
-      <h3>الحساب</h3>
+      <h3 data-i18n="accountTitle">الحساب</h3>
       <p id="sysInfo"></p>
-      <button class="btn danger" id="logout">تسجيل خروج</button>
+      <button class="btn danger" id="logout" data-i18n="logout">تسجيل خروج</button>
     </div>
   </section>
 </main>
@@ -196,13 +207,13 @@
 <nav>
   <button data-tab="assets" class="on">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="9" cy="12" r="2" fill="currentColor"/></svg>
-    الأصول</button>
+    <span data-i18n="navAssets">الأصول</span></button>
   <button data-tab="alerts">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-    التنبيهات<span class="badge hidden" id="newBadge"></span></button>
+    <span data-i18n="navAlerts">التنبيهات</span><span class="badge hidden" id="newBadge"></span></button>
   <button data-tab="settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    الإعدادات</button>
+    <span data-i18n="navSettings">الإعدادات</span></button>
 </nav>
 
 <div class="sheet-bg" id="sheetBg"></div>
@@ -211,7 +222,96 @@
 
 <script>
 const LEVELS = ["R3","R2","R1","P","S1","S2","S3"];
-const GROUPS = [["all","الكل"],["forex","فوركس"],["commodities","سلع"],["indices","مؤشرات"],["crypto","كريبتو"],["stocks","أسهم"]];
+const I18N = {
+  ar: {
+    appName: "تنبيهات البيفوت", sortNear: "الأقرب لمستوى", sortUp: "الأكثر ارتفاعاً اليوم", sortDown: "الأكثر انخفاضاً اليوم", sortList: "حسب القائمة", sortAria: "ترتيب",
+    g_all: "الكل", g_forex: "فوركس", g_commodities: "سلع", g_indices: "مؤشرات", g_crypto: "كريبتو", g_stocks: "أسهم",
+    count: (n) => `${n} أصل`, min: "دقيقة", hour: "ساعة", day: "يوم",
+    stale: (x) => `آخر سعر قبل ${x} (السوق مغلق أو لا يوجد تداول)`,
+    at: "على", above: "فوق", below: "تحت", by: "بفرق",
+    notAvailable: "غير متوفرة عند الشركة", noPrices: "لا توجد أسعار بعد — جسر الأسعار لا يرسل هذه الأداة",
+    historyLoading: "⏳ جارِ تحميل التاريخ من جسر الأسعار — المستويات بتظهر خلال دقائق", noData: "ما في بيانات بعد…",
+    priceNow: "السعر الآن", levelsOf: "مستويات يوم", trendTitle: "الميل العام", bottom: "القاع", top: "القمة",
+    manual: " (محدد يدوياً)", auto: " (تلقائي)", noTrend: "النظام ما لقى ميل واضح.",
+    trendRule: "صاعد طالما القاع صامد، وهابط طالما القمة صامدة.", segUp: "صاعد — القاع", segDown: "هابط — القمة",
+    phBottom: "اكتب سعر القاع (اختياري)", phTop: "اكتب سعر القمة (اختياري)", save: "حفظ", backAuto: "رجوع للتلقائي",
+    mute: (n) => `كتم إشعارات ${n}`, muteHelp: "التنبيهات بتضل تنحفظ بالسجل",
+    enterNumber: "اكتب رقم صحيح", saved: "انحفظ ✓", wentAuto: "رجع للتلقائي",
+    today: "اليوم", yesterday: "مبارح", locale: "ar",
+    noAlerts: "ما في تنبيهات لسا. أول ما يوصل السعر لمستوى بتظهر هون.", noMuted: "ولا أصل مكتوم.", listSep: "، ",
+    planIb: "مجاني — عميل وكالة موقع توصيات", planPaid: (d) => `اشتراك لغاية ${d}`, renew: "تجديد", planStaff: "فريق العمل", planOwner: "الإدارة",
+    lastUpdate: "آخر تحديث للأسعار", devicesOn: "أجهزة مفعّل عليها الإشعارات", usersPush: "مستخدمين عندهم إشعارات", devices: "أجهزة",
+    iosStatus: "على الآيفون لازم تضيف التطبيق للشاشة الرئيسية أول: زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»، وبعدها افتحه من الأيقونة.",
+    iosBannerT: "ثبّت التطبيق عشان توصلك الإشعارات", iosBannerS: "زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»",
+    unsupported: "هذا المتصفح ما بيدعم الإشعارات. جرّب Chrome على أندرويد أو Safari على آيفون (iOS 16.4+).",
+    denied: "الإشعارات ممنوعة لهذا الموقع. فعّلها من إعدادات المتصفح/الجهاز وارجع.",
+    pushOn: "✅ الإشعارات مفعّلة على هذا الجهاز.", reEnable: "إعادة التفعيل", pushOff: "الإشعارات مش مفعّلة على هذا الجهاز.",
+    bannerT: "فعّل الإشعارات", bannerS: "عشان يوصلك كل تنبيه على الموبايل", enable: "تفعيل", enablePush: "تفعيل الإشعارات",
+    mustAllow: "لازم تسمح بالإشعارات", pushDone: "تم تفعيل الإشعارات ✓", failed: "ما زبط: ", sent: "انبعث ✓", noDevice: "ما في جهاز مفعّل",
+    live: "مباشر", waiting: "بانتظار الأسعار…", noConn: "ما في اتصال", error: "خطأ",
+    trend_up: "صاعد ↗", trend_down: "هابط ↘", trend_range: "غير واضح ↔",
+    pushTitle: "الإشعارات على هذا الجهاز", testPush: "إرسال تنبيه تجريبي", langTitle: "اللغة", langHelp: "لغة التطبيق والإشعارات.",
+    levelsTitle: "المستويات", levelsHelp: "اختار المستويات اللي بدك تنبيه عليها (نزول أو طلوع).",
+    approachTitle: "تنبيه قبل الوصول", approachHelp: "\"السعر نازل باتجاه S1\" قبل ما يوصله بشوي",
+    mutedTitle: "الأصول المكتومة", mutedHelp: "أصل مكتوم ما بيبعت إشعار، بس تنبيهاته بتضل بالسجل. للكتم افتح الأصل من قائمة الأصول.",
+    accountTitle: "الحساب", logout: "تسجيل خروج", navAssets: "الأصول", navAlerts: "التنبيهات", navSettings: "الإعدادات",
+  },
+  en: {
+    appName: "Pivot Alerts", sortNear: "Closest to a level", sortUp: "Top gainers today", sortDown: "Top losers today", sortList: "List order", sortAria: "Sort",
+    g_all: "All", g_forex: "Forex", g_commodities: "Commodities", g_indices: "Indices", g_crypto: "Crypto", g_stocks: "Stocks",
+    count: (n) => `${n} assets`, min: "min", hour: "h", day: "d",
+    stale: (x) => `Last price ${x} ago (market closed or no trading)`,
+    at: "At", above: "Above", below: "Below", by: "by",
+    notAvailable: "Not available at the broker", noPrices: "No prices yet: the price bridge doesn't send this instrument",
+    historyLoading: "⏳ Loading history from the price bridge. Levels appear within minutes", noData: "No data yet…",
+    priceNow: "Price now", levelsOf: "Levels for", trendTitle: "General trend", bottom: "Bottom", top: "Top",
+    manual: " (set manually)", auto: " (automatic)", noTrend: "No clear trend found.",
+    trendRule: "Rising as long as the bottom holds, falling as long as the top holds.", segUp: "Rising — bottom", segDown: "Falling — top",
+    phBottom: "Bottom price (optional)", phTop: "Top price (optional)", save: "Save", backAuto: "Back to automatic",
+    mute: (n) => `Mute ${n} notifications`, muteHelp: "Alerts are still kept in the list",
+    enterNumber: "Enter a valid number", saved: "Saved ✓", wentAuto: "Back to automatic",
+    today: "Today", yesterday: "Yesterday", locale: "en-GB",
+    noAlerts: "No alerts yet. They appear here as soon as the price reaches a level.", noMuted: "No muted assets.", listSep: ", ",
+    planIb: "Free: Twsiat agency client", planPaid: (d) => `Subscription until ${d}`, renew: "Renew", planStaff: "Team", planOwner: "Admin",
+    lastUpdate: "Last price update", devicesOn: "Devices with notifications", usersPush: "Users with notifications", devices: "devices",
+    iosStatus: "On iPhone, add the app to your Home Screen first: Share ⬆️ → \"Add to Home Screen\", then open it from the icon.",
+    iosBannerT: "Install the app to get notifications", iosBannerS: "Share ⬆️ → \"Add to Home Screen\"",
+    unsupported: "This browser doesn't support notifications. Use Chrome on Android or Safari on iPhone (iOS 16.4+).",
+    denied: "Notifications are blocked for this site. Allow them in your browser or phone settings, then come back.",
+    pushOn: "✅ Notifications are on for this device.", reEnable: "Re-enable", pushOff: "Notifications are off on this device.",
+    bannerT: "Turn on notifications", bannerS: "to get every alert on your phone", enable: "Turn on", enablePush: "Turn on notifications",
+    mustAllow: "Please allow notifications", pushDone: "Notifications turned on ✓", failed: "Didn't work: ", sent: "Sent ✓", noDevice: "No device turned on",
+    live: "Live", waiting: "Waiting for prices…", noConn: "No connection", error: "Error",
+    trend_up: "Rising ↗", trend_down: "Falling ↘", trend_range: "No clear trend ↔",
+    pushTitle: "Notifications on this device", testPush: "Send a test alert", langTitle: "Language", langHelp: "Language of the app and the notifications.",
+    levelsTitle: "Levels", levelsHelp: "Choose the levels you want alerts for (falling or rising).",
+    approachTitle: "Alert before reaching", approachHelp: "\"Price falling toward S1\" shortly before it gets there",
+    mutedTitle: "Muted assets", mutedHelp: "A muted asset sends no notifications, but its alerts stay in the list. To mute, open the asset from the list.",
+    accountTitle: "Account", logout: "Sign out", navAssets: "Assets", navAlerts: "Alerts", navSettings: "Settings",
+  },
+};
+function pickLang() {
+  let l = null;
+  try { l = localStorage.getItem("lang"); } catch (_) {}
+  if (l === "ar" || l === "en") return l;
+  return (navigator.languages || [navigator.language || ""]).some((x) => /^ar/i.test(x)) ? "ar" : "en";
+}
+let LANG = pickLang();
+const t = (k, ...a) => { const v = (I18N[LANG] || I18N.ar)[k] ?? I18N.ar[k] ?? k; return typeof v === "function" ? v(...a) : v; };
+function applyLang() {
+  document.documentElement.lang = LANG; document.documentElement.dir = LANG === "ar" ? "rtl" : "ltr";
+  document.title = t("appName");
+  document.querySelectorAll("[data-i18n]").forEach((e) => e.textContent = t(e.dataset.i18n));
+  $("sort").setAttribute("aria-label", t("sortAria"));
+  $("langToggle").textContent = LANG === "ar" ? "EN" : "ع";
+  $("langAr").className = "btn" + (LANG === "ar" ? "" : " ghost"); $("langEn").className = "btn" + (LANG === "en" ? "" : " ghost");
+}
+async function setLang(l, save = true) {
+  LANG = l; try { localStorage.setItem("lang", l); } catch (_) {}
+  applyLang(); renderGroups(); renderAssets(); renderSettings(); renderAlerts(); if (S.openAsset) renderSheet(); renderPush();
+  if (save) { try { await api("/api/settings", { method: "POST", body: JSON.stringify({ lang: l }) }); loadAlerts(); } catch (_) {} }
+}
+const GROUPS = ["all", "forex", "commodities", "indices", "crypto", "stocks"];
 const S = { assets:[], alerts:[], settings:null, group:"all", tab:"assets", lastPoll:null, devices:0, seenAlert:null, openAsset:null, me:{} };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -229,8 +329,8 @@ function staleText(a) {
   if (!a.quote_t) return "";
   const mins = Math.round((Date.now() - new Date(a.quote_t)) / 60000);
   if (mins < 5) return "";
-  const txt = mins < 60 ? `${mins} دقيقة` : mins < 1440 ? `${Math.round(mins / 60)} ساعة` : `${Math.round(mins / 1440)} يوم`;
-  return `<div class="near" style="color:var(--dim)">آخر سعر قبل ${txt} (السوق مغلق أو لا يوجد تداول)</div>`;
+  const txt = mins < 60 ? `${mins} ${t("min")}` : mins < 1440 ? `${Math.round(mins / 60)} ${t("hour")}` : `${Math.round(mins / 1440)} ${t("day")}`;
+  return `<div class="near" style="color:var(--dim)">${t("stale", txt)}</div>`;
 }
 const pct = (v) => v == null || isNaN(v) ? "" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2) + "%";
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); }
@@ -240,7 +340,7 @@ async function api(path, opts = {}) {
   if (r.status === 401) { location.href = "/login"; throw new Error("auth"); }
   if (r.status === 403 && path !== "/api/override" && path !== "/api/override/clear") { location.href = "/expired"; throw new Error("auth"); }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.detail || "خطأ");
+  if (!r.ok) throw new Error(j.detail || t("error"));
   return j;
 }
 
@@ -259,7 +359,7 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
 
 // ---------- assets ----------
 function renderGroups() {
-  $("groups").innerHTML = GROUPS.map(([k,l]) => `<button class="chip ${S.group===k?"on":""}" data-g="${k}">${l}</button>`).join("");
+  $("groups").innerHTML = GROUPS.map((k) => `<button class="chip ${S.group===k?"on":""}" data-g="${k}">${t("g_" + k)}</button>`).join("");
   $("groups").querySelectorAll(".chip").forEach(c => c.onclick = () => { S.group = c.dataset.g; renderGroups(); renderAssets(); });
 }
 
@@ -285,9 +385,9 @@ function ladderHTML(a) {
 function nearText(a) {
   if (!a.nearest || a.price == null) return "";
   const n = a.nearest, d = n.distance;
-  const where = Math.abs(d) < 1e-12 ? "على" : d > 0 ? "فوق" : "تحت";
+  const where = Math.abs(d) < 1e-12 ? t("at") : d > 0 ? t("above") : t("below");
   const hot = n.atr_frac != null && n.atr_frac < 0.15;
-  return `<div class="near ${hot ? "hot" : ""}">${where} ${n.level} <span class="num">${fmt(n.value, dig(a))}</span> بفرق <span class="num">${fmt(Math.abs(d), dig(a))}</span></div>`;
+  return `<div class="near ${hot ? "hot" : ""}">${where} ${n.level} <span class="num">${fmt(n.value, dig(a))}</span> ${t("by")} <span class="num">${fmt(Math.abs(d), dig(a))}</span></div>`;
 }
 
 function renderAssets() {
@@ -299,7 +399,7 @@ function renderAssets() {
     list = [...list].sort((x, y) => (y.change_pct ?? -1e9) - (x.change_pct ?? -1e9));
   else if (sortBy === "down")
     list = [...list].sort((x, y) => (x.change_pct ?? 1e9) - (y.change_pct ?? 1e9));
-  $("count").textContent = `${list.length} أصل`;
+  $("count").textContent = t("count", list.length);
   $("assets").innerHTML = list.map(a => `
     <div class="card ${a.muted ? "muted" : ""}" data-name="${esc(a.name)}">
       <div class="crow">
@@ -309,12 +409,12 @@ function renderAssets() {
       </div>
       <div class="crow" style="margin-top:4px">
         ${nearText(a) || "<div></div>"}
-        ${a.trend ? `<span class="pill ${a.trend}">${esc(a.trend_ar)}</span>` : ""}
+        ${a.trend ? `<span class="pill ${a.trend}">${esc(t("trend_" + a.trend))}</span>` : ""}
       </div>
       ${ladderHTML(a)}
       ${staleText(a)}
-      ${a.error ? `<div class="err">⚠️ ${/not available/.test(a.error) ? "غير متوفرة عند الشركة" : /no prices yet/.test(a.error) ? "لا توجد أسعار بعد — جسر الأسعار لا يرسل هذه الأداة" : /history loading/.test(a.error) ? "⏳ جارِ تحميل التاريخ من جسر الأسعار — المستويات بتظهر خلال دقائق" : esc(a.error)}</div>` : ""}
-    </div>`).join("") || `<div class="empty">ما في بيانات بعد…</div>`;
+      ${a.error ? `<div class="err">⚠️ ${/not available/.test(a.error) ? t("notAvailable") : /no prices yet/.test(a.error) ? t("noPrices") : /history loading/.test(a.error) ? t("historyLoading") : esc(a.error)}</div>` : ""}
+    </div>`).join("") || `<div class="empty">${t("noData")}</div>`;
   $("assets").querySelectorAll(".card").forEach(c => c.onclick = () => openSheet(c.dataset.name));
 }
 $("sort").onchange = () => { try { localStorage.setItem("sort", $("sort").value); } catch(_){} renderAssets(); };
@@ -332,47 +432,47 @@ function renderSheet() {
     for (const k of LEVELS) {
       const v = a.levels[k];
       if (!placed && a.price != null && a.price > v) {
-        rows += `<tr class="cur"><td>السعر الآن</td><td class="num">${fmt(a.price, dig(a))}</td><td></td></tr>`; placed = true;
+        rows += `<tr class="cur"><td>${t("priceNow")}</td><td class="num">${fmt(a.price, dig(a))}</td><td></td></tr>`; placed = true;
       }
       const d = a.price != null ? v - a.price : null;
       rows += `<tr><td class="${levelClass(k)}">${k}</td><td class="num">${fmt(v, dig(a))}</td><td class="num">${d == null ? "" : (d > 0 ? "+" : "−") + fmt(Math.abs(d), dig(a))}</td></tr>`;
     }
-    if (!placed && a.price != null) rows += `<tr class="cur"><td>السعر الآن</td><td class="num">${fmt(a.price, dig(a))}</td><td></td></tr>`;
+    if (!placed && a.price != null) rows += `<tr class="cur"><td>${t("priceNow")}</td><td class="num">${fmt(a.price, dig(a))}</td><td></td></tr>`;
   }
   const anchorLine = a.anchor != null && a.trend !== "range"
-    ? `${a.trend === "up" ? "القاع" : "القمة"}: <span class="num">${fmt(a.anchor, dig(a))}</span>${a.manual ? " (محدد يدوياً)" : " (تلقائي)"}` : "";
-  const t = a.manual ? a.trend : (a.trend === "down" ? "down" : "up");
+    ? `${a.trend === "up" ? t("bottom") : t("top")}: <span class="num">${fmt(a.anchor, dig(a))}</span>${a.manual ? t("manual") : t("auto")}` : "";
+  const tr = a.manual ? a.trend : (a.trend === "down" ? "down" : "up");
   $("sheet").innerHTML = `
     <div class="grab"></div>
     <div class="crow"><span class="name" style="font-size:20px">${esc(a.name)}</span><span><span class="chg num ${a.change_pct > 0 ? "pos" : a.change_pct < 0 ? "neg" : ""}">${pct(a.change_pct)}</span><span class="price num" style="font-size:22px">${fmt(a.price, dig(a))}</span></span></div>
-    <div class="crow" style="margin-top:6px"><span style="color:var(--muted);font-size:13px">مستويات يوم <span class="num">${esc(a.day || "")}</span></span>
-      ${a.trend ? `<span class="pill ${a.trend}">${esc(a.trend_ar)}</span>` : ""}</div>
+    <div class="crow" style="margin-top:6px"><span style="color:var(--muted);font-size:13px">${t("levelsOf")} <span class="num">${esc(a.day || "")}</span></span>
+      ${a.trend ? `<span class="pill ${a.trend}">${esc(t("trend_" + a.trend))}</span>` : ""}</div>
     <table class="lvtable">${rows}</table>
     <div class="sec" style="margin-top:14px">
-      <h3>الميل العام</h3>
-      <p>${anchorLine || "النظام ما لقى ميل واضح."} صاعد طالما القاع صامد، وهابط طالما القمة صامدة.</p>
-      ${S.me.admin ? `<div class="seg" id="segT"><button data-t="up" class="${t==="up"?"on up":""}">صاعد — القاع</button><button data-t="down" class="${t==="down"?"on down":""}">هابط — القمة</button></div>
-      <div class="field"><input id="anchorIn" inputmode="decimal" placeholder="${t === "down" ? "اكتب سعر القمة" : "اكتب سعر القاع"} (اختياري)" value="${a.manual ? a.anchor : ""}">
-        <button class="btn" id="saveAnchor">حفظ</button></div>
-      ${a.manual ? `<button class="btn ghost" id="clearAnchor" style="margin-top:10px;width:100%">رجوع للتلقائي</button>` : ""}` : ""}
+      <h3>${t("trendTitle")}</h3>
+      <p>${anchorLine || t("noTrend")} ${t("trendRule")}</p>
+      ${S.me.admin ? `<div class="seg" id="segT"><button data-t="up" class="${tr==="up"?"on up":""}">${t("segUp")}</button><button data-t="down" class="${tr==="down"?"on down":""}">${t("segDown")}</button></div>
+      <div class="field"><input id="anchorIn" inputmode="decimal" placeholder="${tr === "down" ? t("phTop") : t("phBottom")}" value="${a.manual ? a.anchor : ""}">
+        <button class="btn" id="saveAnchor">${t("save")}</button></div>
+      ${a.manual ? `<button class="btn ghost" id="clearAnchor" style="margin-top:10px;width:100%">${t("backAuto")}</button>` : ""}` : ""}
     </div>
     <div class="sec">
-      <div class="tog"><div><div>كتم إشعارات ${esc(a.name)}</div><div style="color:var(--muted);font-size:13px">التنبيهات بتضل تنحفظ بالسجل</div></div>
+      <div class="tog"><div><div>${t("mute", esc(a.name))}</div><div style="color:var(--muted);font-size:13px">${t("muteHelp")}</div></div>
         <label class="switch"><input type="checkbox" id="muteIn" ${a.muted ? "checked" : ""}><span></span></label></div>
     </div>`;
-  let trendSel = t;
+  let trendSel = tr;
   if ($("segT")) $("segT").querySelectorAll("button").forEach(b => b.onclick = () => {
     trendSel = b.dataset.t;
     $("segT").querySelectorAll("button").forEach(x => x.className = x.dataset.t === trendSel ? "on " + trendSel : "");
   });
   if ($("saveAnchor")) $("saveAnchor").onclick = async () => {
     const v = parseFloat(($("anchorIn").value || "").replace(/,/g, ""));
-    if (!isFinite(v)) return toast("اكتب رقم صحيح");
+    if (!isFinite(v)) return toast(t("enterNumber"));
     try { await api("/api/override", { method: "POST", body: JSON.stringify({ asset: a.name, trend: trendSel, anchor: v }) });
-          toast("انحفظ ✓"); await loadState(); renderSheet(); } catch (e) { toast(e.message); }
+          toast(t("saved")); await loadState(); renderSheet(); } catch (e) { toast(e.message); }
   };
   if ($("clearAnchor")) $("clearAnchor").onclick = async () => {
-    await api("/api/override/clear", { method: "POST", body: JSON.stringify({ asset: a.name }) }); toast("رجع للتلقائي"); await loadState(); renderSheet();
+    await api("/api/override/clear", { method: "POST", body: JSON.stringify({ asset: a.name }) }); toast(t("wentAuto")); await loadState(); renderSheet();
   };
   $("muteIn").onchange = async (e) => {
     const muted = new Set(S.settings.muted); e.target.checked ? muted.add(a.name) : muted.delete(a.name);
@@ -383,12 +483,12 @@ function renderSheet() {
 // ---------- alerts ----------
 function dayLabel(d) {
   const today = new Date(); const y = new Date(); y.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "اليوم";
-  if (d.toDateString() === y.toDateString()) return "مبارح";
-  return d.toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "long" });
+  if (d.toDateString() === today.toDateString()) return t("today");
+  if (d.toDateString() === y.toDateString()) return t("yesterday");
+  return d.toLocaleDateString(t("locale"), { weekday: "long", day: "numeric", month: "long" });
 }
 function renderAlerts() {
-  if (!S.alerts.length) { $("alerts").innerHTML = `<div class="empty">ما في تنبيهات لسا. أول ما يوصل السعر لمستوى بتظهر هون.</div>`; return; }
+  if (!S.alerts.length) { $("alerts").innerHTML = `<div class="empty">${t("noAlerts")}</div>`; return; }
   let html = "", last = "";
   for (const al of S.alerts) {
     const d = new Date(al.ts), lbl = dayLabel(d);
@@ -413,18 +513,18 @@ function renderSettings() {
     const s = new Set(S.settings.levels); s.has(c.dataset.k) ? s.delete(c.dataset.k) : s.add(c.dataset.k); saveSettings({ levels: [...s] });
   });
   $("approach").checked = !!S.settings.approach;
-  $("mutedList").textContent = S.settings.muted.length ? S.settings.muted.join("، ") : "ولا أصل مكتوم.";
+  $("mutedList").textContent = S.settings.muted.length ? S.settings.muted.join(t("listSep")) : t("noMuted");
   const me = S.me || {};
-  const plan = me.reason === "ib" ? "مجاني — عميل وكالة موقع توصيات"
-    : me.reason === "paid" && me.until ? `اشتراك لغاية <span class="num">${new Date(me.until).toLocaleDateString("en-GB")}</span>${me.members ? ` · <a href="${esc(me.members)}" style="color:var(--amber)">تجديد</a>` : ""}`
-    : me.reason === "staff" ? "فريق العمل" : me.reason === "owner" ? "الإدارة" : "";
+  const plan = me.reason === "ib" ? t("planIb")
+    : me.reason === "paid" && me.until ? `${t("planPaid", `<span class="num">${new Date(me.until).toLocaleDateString("en-GB")}</span>`)}${me.members ? ` · <a href="${esc(me.members)}" style="color:var(--amber)">${t("renew")}</a>` : ""}`
+    : me.reason === "staff" ? t("planStaff") : me.reason === "owner" ? t("planOwner") : "";
   $("sysInfo").innerHTML = (me.name ? `${esc(me.name)}<br>` : "") + (plan ? `${plan}<br>` : "")
-    + `آخر تحديث للأسعار: <span class="num">${S.lastPoll ? new Date(S.lastPoll).toLocaleTimeString("en-GB") : "—"}</span><br>أجهزة مفعّل عليها الإشعارات: <span class="num">${S.devices}</span>`
-    + (me.stats ? `<br>مستخدمين عندهم إشعارات: <span class="num">${me.stats.people}</span> · أجهزة: <span class="num">${me.stats.devices}</span>` : "");
+    + `${t("lastUpdate")}: <span class="num">${S.lastPoll ? new Date(S.lastPoll).toLocaleTimeString("en-GB") : "—"}</span><br>${t("devicesOn")}: <span class="num">${S.devices}</span>`
+    + (me.stats ? `<br>${t("usersPush")}: <span class="num">${me.stats.people}</span> · ${t("devices")}: <span class="num">${me.stats.devices}</span>` : "");
 }
 $("approach").onchange = (e) => saveSettings({ approach: e.target.checked });
 async function saveSettings(patch) {
-  try { const j = await api("/api/settings", { method: "POST", body: JSON.stringify(patch) }); S.settings = j.settings; renderSettings(); await loadState(); toast("انحفظ ✓"); }
+  try { const j = await api("/api/settings", { method: "POST", body: JSON.stringify(patch) }); S.settings = j.settings; renderSettings(); await loadState(); toast(t("saved")); }
   catch (e) { toast(e.message); }
 }
 $("logout").onclick = async () => { await api("/api/logout", { method: "POST" }); location.href = "/login"; };
@@ -445,22 +545,22 @@ async function currentSub() { return swReg ? await swReg.pushManager.getSubscrip
 async function renderPush() {
   const banner = $("pushBanner"); let status, showBanner = false, bannerHTML = "";
   if (isIOS && !standalone) {
-    status = "على الآيفون لازم تضيف التطبيق للشاشة الرئيسية أول: زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»، وبعدها افتحه من الأيقونة.";
-    bannerHTML = `<div><b>ثبّت التطبيق عشان توصلك الإشعارات</b>زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»</div>`; showBanner = true;
+    status = t("iosStatus");
+    bannerHTML = `<div><b>${t("iosBannerT")}</b>${t("iosBannerS")}</div>`; showBanner = true;
     $("enablePush").disabled = true;
   } else if (!pushSupported) {
-    status = "هذا المتصفح ما بيدعم الإشعارات. جرّب Chrome على أندرويد أو Safari على آيفون (iOS 16.4+).";
+    status = t("unsupported");
     $("enablePush").disabled = true;
   } else if (Notification.permission === "denied") {
-    status = "الإشعارات ممنوعة لهذا الموقع. فعّلها من إعدادات المتصفح/الجهاز وارجع.";
+    status = t("denied");
     $("enablePush").disabled = true;
   } else {
     const sub = await currentSub();
     if (sub && Notification.permission === "granted") {
-      status = "✅ الإشعارات مفعّلة على هذا الجهاز."; $("enablePush").textContent = "إعادة التفعيل";
+      status = t("pushOn"); $("enablePush").textContent = t("reEnable");
     } else {
-      status = "الإشعارات مش مفعّلة على هذا الجهاز.";
-      bannerHTML = `<div><b>فعّل الإشعارات</b>عشان يوصلك كل تنبيه على الموبايل</div><button class="btn" id="bannerEnable">تفعيل</button>`; showBanner = true;
+      status = t("pushOff"); $("enablePush").textContent = t("enablePush");
+      bannerHTML = `<div><b>${t("bannerT")}</b>${t("bannerS")}</div><button class="btn" id="bannerEnable">${t("enable")}</button>`; showBanner = true;
     }
   }
   $("pushStatus").textContent = status;
@@ -471,19 +571,19 @@ async function renderPush() {
 async function enablePush() {
   try {
     const perm = await Notification.requestPermission();
-    if (perm !== "granted") { toast("لازم تسمح بالإشعارات"); return renderPush(); }
+    if (perm !== "granted") { toast(t("mustAllow")); return renderPush(); }
     const { key } = await api("/api/vapid");
     let sub = await currentSub();
     if (sub) await sub.unsubscribe().catch(() => {});
     sub = await swReg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
     await api("/api/subscribe", { method: "POST", body: JSON.stringify({ subscription: sub.toJSON() }) });
-    toast("تم تفعيل الإشعارات ✓");
-  } catch (e) { toast("ما زبط: " + e.message); }
+    toast(t("pushDone"));
+  } catch (e) { toast(t("failed") + e.message); }
   renderPush(); loadState();
 }
 $("enablePush").onclick = enablePush;
 $("testPush").onclick = async () => {
-  try { const j = await api("/api/test", { method: "POST" }); toast(j.devices ? "انبعث ✓" : "ما في جهاز مفعّل"); loadAlerts(); } catch (e) { toast(e.message); }
+  try { const j = await api("/api/test", { method: "POST" }); toast(j.devices ? t("sent") : t("noDevice")); loadAlerts(); } catch (e) { toast(e.message); }
 };
 
 // ---------- data loop ----------
@@ -491,12 +591,15 @@ async function loadState() {
   try {
     const j = await api("/api/state");
     S.assets = j.assets; S.settings = j.settings; S.lastPoll = j.last_poll; S.devices = j.push_devices; S.me = j.me || {};
+    // the server keeps the language so notifications come in it: save the first choice, follow later changes
+    if (!S.settings.lang) { api("/api/settings", { method: "POST", body: JSON.stringify({ lang: LANG }) }).catch(() => {}); S.settings.lang = LANG; }
+    else if (S.settings.lang !== LANG) { setLang(S.settings.lang, false); }
     const age = S.lastPoll ? (Date.now() - new Date(S.lastPoll)) / 1000 : 1e9;
     $("dot").className = "dot " + (age < 120 ? "on" : "off");
-    $("updated").innerHTML = S.lastPoll ? `مباشر · <span class="num">${new Date(S.lastPoll).toLocaleTimeString("en-GB")}</span>` : "بانتظار الأسعار…";
+    $("updated").innerHTML = S.lastPoll ? `${t("live")} · <span class="num">${new Date(S.lastPoll).toLocaleTimeString("en-GB")}</span>` : t("waiting");
     renderAssets(); renderSettings();
     if (S.openAsset) { const keep = document.activeElement && document.activeElement.id === "anchorIn"; if (!keep) renderSheet(); }
-  } catch (e) { if (e.message !== "auth") { $("dot").className = "dot off"; $("updated").textContent = "ما في اتصال"; } }
+  } catch (e) { if (e.message !== "auth") { $("dot").className = "dot off"; $("updated").textContent = t("noConn"); } }
 }
 async function loadAlerts() {
   try { const j = await api("/api/alerts?limit=200"); S.alerts = j.alerts; renderAlerts(); renderBadge(); } catch (_) {}
@@ -504,7 +607,9 @@ async function loadAlerts() {
 
 (async function init() {
   try { S.seenAlert = localStorage.getItem("seenAlert"); $("sort").value = localStorage.getItem("sort") || "near"; } catch(_){}
-  renderGroups();
+  applyLang(); renderGroups();
+  $("langToggle").onclick = () => setLang(LANG === "ar" ? "en" : "ar");
+  $("langAr").onclick = () => setLang("ar"); $("langEn").onclick = () => setLang("en");
   if ("serviceWorker" in navigator) { try { swReg = await navigator.serviceWorker.register("/sw.js", { scope: "/" }); await navigator.serviceWorker.ready; } catch (_) {} }
   await Promise.all([loadState(), loadAlerts()]);
   setTab((location.hash || "#assets").slice(1).replace(/[^a-z]/g, "") || "assets");

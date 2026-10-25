@@ -269,3 +269,29 @@ def test_brief_database_hiccup_does_not_show_errors():
     svc.feed.price = real
     svc.step()
     assert not svc.errors
+
+
+def test_each_member_gets_alerts_in_their_language():
+    svc, hub, d, app = make_members()
+    a, _ = member(app, "code1")
+    b, _ = member(app, "code2")
+    rang = phones(hub, "u-ib", "u-paid")
+    svc.state["history"].clear()
+    b.post("/api/settings", json={"lang": "en"})
+    from engine import Event
+    e = Event("GOLD", "CROSS", "down", "S1", 3970.78, 3970.5, "up", "entry")
+    import messages_ar as AR, messages_en as EN
+    t1, b1, act = AR.event_text(e, 2); te, be, _ = EN.event_text(e, 2)
+    svc._emit("GOLD", t1, b1, act, "CROSS", "S1", {"en": {"title": te, "body": be}})
+    assert "وصل" in rang["u-ib"][0]["title"] and "Support 1" in rang["u-paid"][0]["title"]
+    assert "Price reached" in b.get("/api/alerts").json()["alerts"][0]["title"]
+    assert "وصل" in a.get("/api/alerts").json()["alerts"][0]["title"]
+    assert b.get("/api/state").json()["settings"]["lang"] == "en"
+
+
+def test_crypto_shows_two_decimals():
+    from service import AlertService
+    svc = AlertService({"feed": "demo", "assets": []}, None, tempfile.mkdtemp())
+    assert svc._digits({"group": "crypto"}, "SOLUSD", 101.17) == 2
+    assert svc._digits({"group": "crypto"}, "XRPUSD", 2.48) == 4
+    assert svc._digits({"group": "crypto", "digits": 3}, "SOLUSD", 101.17) == 3

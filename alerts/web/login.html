@@ -41,21 +41,30 @@
 <body>
   <form class="box" id="f">
     <img class="logo" src="/icon-192.png" alt="">
-    <h1>تنبيهات البيفوت</h1>
-    <p>الدعم والمقاومة لحظة بلحظة</p>
+    <h1 data-i18n="t">تنبيهات البيفوت</h1>
+    <p data-i18n="s">الدعم والمقاومة لحظة بلحظة</p>
     <div id="memberBox" hidden>
-      <a class="member" id="memberLink" href="https://rooms.twsiat.com/alerts">دخول بحساب موقع توصيات</a>
-      <div class="hint">مجاناً لعملاء وكالة موقع توصيات، أو باشتراك شهري.</div>
+      <a class="member" id="memberLink" href="https://rooms.twsiat.com/alerts" data-i18n="m">دخول بحساب موقع توصيات</a>
+      <div class="hint" data-i18n="h">مجاناً لعملاء وكالة موقع توصيات، أو باشتراك شهري.</div>
     </div>
     <details id="pwBox">
-      <summary>دخول الإدارة بكلمة السر</summary>
-      <label for="pw">كلمة السر</label>
+      <summary data-i18n="a">دخول الإدارة بكلمة السر</summary>
+      <label for="pw" data-i18n="pw">كلمة السر</label>
       <input id="pw" type="password" autocomplete="current-password" required>
-      <button id="b" type="submit">دخول</button>
+      <button id="b" type="submit" data-i18n="go">دخول</button>
     </details>
     <div class="err" id="err"></div>
   </form>
 <script>
+(function () {   // English when the phone/browser isn't in Arabic (or the app was switched to English)
+  let l = null; try { l = localStorage.getItem("lang"); } catch (_) {}
+  if (!l) l = (navigator.languages || [navigator.language || ""]).some((x) => /^ar/i.test(x)) ? "ar" : "en";
+  if (l !== "en") return;
+  const EN = { t: "Pivot Alerts", s: "Support and resistance, live", m: "Sign in with your Twsiat account",
+    h: "Free for Twsiat agency clients, or with a monthly subscription.", a: "Admin sign-in with password", pw: "Password", go: "Sign in" };
+  document.documentElement.lang = "en"; document.documentElement.dir = "ltr"; document.title = "Sign in · Pivot Alerts";
+  document.querySelectorAll("[data-i18n]").forEach((e) => e.textContent = EN[e.dataset.i18n]);
+})();
 fetch("/config.json").then(r => r.json()).then(c => {
   if (c.member_login) { document.getElementById("memberBox").hidden = false; document.getElementById("memberLink").href = c.members; }
   else { document.getElementById("pwBox").open = true; }

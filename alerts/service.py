@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from engine import AlertEngine, fmt
 from levels import atr, levels_from_daily, structure_trend
+import messages_en as EN
 from messages_ar import TREND_AR, event_text, multi_cross_text, trend_change_text
 
 log = logging.getLogger("service")
@@ -64,6 +65,18 @@ class AlertService:
             if uid in (None, "", "owner"):
                 return self.state["settings"]
             return self._defaults(self.state["users"].setdefault(uid, {}))
+
+    def lang(self, uid):
+        return "en" if self.user_settings(uid).get("lang") == "en" else "ar"
+
+    @staticmethod
+    def localize(item, lang):
+        """the alert in this person's language (stored once with both texts)"""
+        en = item.get("en")
+        out = {k: v for k, v in item.items() if k != "en"}
+        if lang == "en" and en:
+            out["title"], out["body"] = en["title"], en["body"]
+        return out
 
     def visible(self, uid, item):
         """Does this alert belong in this person's list? (their levels / approach choice; tests only to the sender)"""
@@ -122,13 +135,21 @@ class AlertService:
             return ctx["auto_trend"], ctx["auto_anchor"], False
         return "range", None, False
 
-    def _context(self, sym):
+    def _digits(self, asset, sym, ref):
+        if asset and asset.get("digits") is not None:
+            return int(asset["digits"])
+        if asset and asset.get("group") == "crypto":
+            return 2 if abs(ref) >= 10 else 4          # like most charts: 101.17, 81,383.60, 2.4815
+        return self.feed.digits(sym)
+
+    def _context(self, sym, asset=None):
         daily = self.feed.daily(sym, 40)
         tbars = self.feed.bars(sym, self.cfg.get("trend_timeframe", "D1"), 500)
         trend, anchor = structure_trend(tbars, self.cfg.get("swing_strength", 5))
         return {"levels": levels_from_daily(daily), "atr": atr(daily, 14), "auto_trend": trend,
                 "prev_close": float(daily["close"].iloc[-1]),
-                "auto_anchor": anchor, "digits": self.feed.digits(sym), "at": time.time()}
+                "auto_anchor": anchor, "digits": self._digits(asset, sym, float(daily["close"].iloc[-1])),
+                "at": time.time()}
 
     def _emit(self, asset, title, body, action, kind, level=None, extra=None):
         item = {"id": uuid.uuid4().hex[:12], "ts": _now_iso(), "asset": asset, "title": title,
@@ -164,7 +185,7 @@ class AlertService:
                     if ctx is None and time.time() < self._retry_at.get(name, 0):
                         continue                         # failed recently: try again in a minute
                     try:
-                        ctx = self._context(sym)
+                        ctx = self._context(sym, a)
                     except Exception:
                         self._retry_at[name] = time.time() + 60
                         raise
@@ -173,7 +194,8 @@ class AlertService:
                     prev = self.state["last_trend"].get(name)
                     if prev and prev != ctx["auto_trend"] and name not in self.state["overrides"]:
                         t, b = trend_change_text(name, prev, ctx["auto_trend"], ctx["auto_anchor"], ctx["digits"])
-                        self._emit(name, t, b, "info", "TREND")
+                        te, be = EN.trend_change_text(name, prev, ctx["auto_trend"], ctx["auto_anchor"], ctx["digits"])
+                        self._emit(name, t, b, "info", "TREND", extra={"en": {"title": te, "body": be}})
                     self.state["last_trend"][name] = ctx["auto_trend"]
                 price = self.feed.price(sym)
                 with self.lock:
@@ -188,21 +210,25 @@ class AlertService:
                 crosses = [e for e in events if e.kind == "CROSS"]
                 if len(crosses) > 1:   # jumped several levels in one go -> one combined message
                     title, body, action, _ = multi_cross_text(crosses, ctx["digits"])
+                    te, be, _, _ = EN.multi_cross_text(crosses, ctx["digits"])
                     self._emit(name, title, body, action, "CROSS", ",".join(e.level_name for e in crosses),
-                               {"price": price, "side": crosses[0].side})
+                               {"price": price, "side": crosses[0].side, "en": {"title": te, "body": be}})
                     events = [e for e in events if e.kind != "CROSS"]
                 for e in events:
                     title, body, action = event_text(e, ctx["digits"])
+                    te, be, _ = EN.event_text(e, ctx["digits"])
                     self._emit(name, title, body, action, e.kind, e.level_name,
-                               {"price": price, "level_price": e.level, "side": e.side})
+                               {"price": price, "level_price": e.level, "side": e.side,
+                                "en": {"title": te, "body": be}})
                     log.info("ALERT %s %s %s @ %s", name, e.kind, e.level_name, price)
                 # manual bottom/top broken -> tell him and fall back to automatic
                 if manual and ((trend == "up" and price < anchor) or (trend == "down" and price > anchor)):
                     self.state["overrides"].pop(name, None)
                     what = "القاع" if trend == "up" else "القمة"
+                    te, be = EN.anchor_broken_text(name, trend, anchor, price, ctx["digits"])
                     self._emit(name, f"{name} ⚠️ انكسر {what} اللي حددته",
                                f"{what}: {fmt(anchor, ctx['digits'])} · السعر: {fmt(price, ctx['digits'])}\n"
-                               f"رجعنا للميل العام التلقائي", "break", "TREND")
+                               f"رجعنا للميل العام التلقائي", "break", "TREND", extra={"en": {"title": te, "body": be}})
             except Exception as ex:
                 if self.errors.get(name) != str(ex) and self._last_ok.get(name, 0) < time.time() - 120:
                     log.warning("%s (%s): %s", name, sym, ex)      # log each problem once, not every round
@@ -260,7 +286,8 @@ class AlertService:
     def history(self, limit=200, uid="owner"):
         with self.lock:
             items = list(self.state["history"])
-        return [i for i in items if self.visible(uid, i)][:limit]
+        lang = self.lang(uid)
+        return [self.localize(i, lang) for i in items if self.visible(uid, i)][:limit]
 
     # ---------- changes from the app ----------
     def set_override(self, name, trend, anchor):
@@ -276,7 +303,7 @@ class AlertService:
             self.state["overrides"].pop(name, None)
         self.save()
 
-    def update_settings(self, muted=None, levels=None, approach=None, uid="owner"):
+    def update_settings(self, muted=None, levels=None, approach=None, uid="owner", lang=None):
         s = self.user_settings(uid)
         with self.lock:
             if muted is not None:
@@ -285,4 +312,6 @@ class AlertService:
                 s["levels"] = [l for l in LEVELS if l in levels]
             if approach is not None:
                 s["approach"] = bool(approach)
+            if lang in ("ar", "en"):
+                s["lang"] = lang
         self.save()
