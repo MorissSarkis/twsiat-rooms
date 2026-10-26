@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -36,9 +37,11 @@ export default function Login() {
       if (error) return setErr('الإيميل أو كلمة السر غير صحيحة');
       router.push(next); router.refresh();
     } else {
+      const ph = phone.replace(/[\s\-().]/g, '').replace(/^00/, '+');
+      if (!/^\+[1-9][0-9]{7,14}$/.test(ph)) { setBusy(false); return setErr('اكتب رقم واتساب مع المفتاح الدولي، مثلاً +971501234567'); }
       const { data, error } = await sb.auth.signUp({
         email, password,
-        options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+        options: { data: { full_name: name, phone: ph }, emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
       });
       setBusy(false);
       if (error) return setErr(error.message.includes('Password') ? 'كلمة السر لازم تكون 6 أحرف على الأقل'
@@ -78,6 +81,11 @@ export default function Login() {
           {mode === 'up' && (
             <label>الاسم
               <input value={name} onChange={(e) => setName(e.target.value)} required />
+            </label>
+          )}
+          {mode === 'up' && (
+            <label>رقم واتساب (مع المفتاح الدولي)
+              <input type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+971 50 123 4567" autoComplete="tel" />
             </label>
           )}
           <label>الإيميل

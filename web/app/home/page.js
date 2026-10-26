@@ -4,6 +4,7 @@ import { currentUser } from '@/lib/supabase-server';
 import { ROOM_AR } from '@/lib/format';
 import ActivationBox, { ACT_ERRORS } from '../activation/box';
 import { openAlerts } from '../alerts/actions';
+import PhoneCard from '../phone/card';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,8 @@ export default async function Home({ searchParams }) {
           <div className="muted">كل خدماتك بمكان واحد.</div>
         </div>
         {err && <div className="err">{err}</div>}
+ {searchParams?.ok === 'phone' && <div className="card hl"><b>انحفظ رقمك ✅</b></div>}
+        {!profile.phone && profile.role === 'client' && <PhoneCard />}
         {searchParams?.ok === 'act' && <div className="card hl"><b>وصلنا طلبك ✅</b><div className="muted" style={{ marginTop: 4 }}>رح نتواصل معك قريباً.</div></div>}
 
         {/* two big tappable tiles: the whole tile is the button */}

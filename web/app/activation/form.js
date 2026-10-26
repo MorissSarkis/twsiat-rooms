@@ -28,8 +28,8 @@ export default function ActivationForm({ action, back, profile }) {
       <label>رقم حساب التداول (MT4 / MT5){!yes && ' — اختياري'}
         <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required={yes} defaultValue={profile?.broker_account || ''} />
       </label>
-      <label>رقم واتساب مع المفتاح الدولي{yes ? ' — اختياري' : ''}
-        <input name="phone" type="tel" dir="ltr" placeholder="+971 50 123 4567" required={!yes} defaultValue={profile?.phone || ''} autoComplete="tel" />
+      <label>رقم واتساب مع المفتاح الدولي
+        <input name="phone" type="tel" dir="ltr" placeholder="+971 50 123 4567" required defaultValue={profile?.phone || ''} autoComplete="tel" />
       </label>
       {!yes && <div className="note">فريقنا رح يتواصل معك على واتساب ويساعدك تفتح أو تنقل حسابك تحت وكالتنا، وبعدها التنبيهات والغرف مجانية إلك.</div>}
       <button className="btn">{yes ? 'أرسل طلب التفعيل' : 'أرسل، وتواصلوا معي'}</button>

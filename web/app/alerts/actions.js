@@ -10,6 +10,7 @@ export async function openAlerts() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect('/login?next=/alerts');
   const { data: code, error } = await sb.rpc('alerts_issue_code');
+  if (error && /phone required/.test(error.message)) redirect('/home?e=phone_needed#phone');
   if (error || !code) redirect('/alerts?e=access');
   redirect(`${ALERTS_URL}/auth?code=${encodeURIComponent(code)}`);
 }
