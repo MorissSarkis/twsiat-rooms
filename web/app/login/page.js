@@ -16,7 +16,7 @@ export default function Login() {
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
-  const [next, setNext] = useState('/rooms');   // where to go after login (only same-site paths)
+  const [next, setNext] = useState('/home');   // where to go after login (only same-site paths)
   useEffect(() => {
     const n = new URLSearchParams(location.search).get('next');
     if (n && /^\/[a-z]/.test(n)) setNext(n);
@@ -36,13 +36,15 @@ export default function Login() {
       if (error) return setErr('الإيميل أو كلمة السر غير صحيحة');
       router.push(next); router.refresh();
     } else {
-      const { error } = await sb.auth.signUp({
+      const { data, error } = await sb.auth.signUp({
         email, password,
         options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
       });
       setBusy(false);
-      if (error) return setErr(error.message.includes('Password') ? 'كلمة السر لازم تكون 6 أحرف على الأقل' : 'ما قدرنا ننشئ الحساب، جرّب مرة ثانية');
-      setMsg('بعتنالك رسالة تأكيد على الإيميل. افتحها واضغط على الرابط لتفعيل حسابك.');
+      if (error) return setErr(error.message.includes('Password') ? 'كلمة السر لازم تكون 6 أحرف على الأقل'
+        : /registered|exists/i.test(error.message) ? 'الإيميل هاد مسجّل قبل. اضغط «تسجيل الدخول».' : 'ما قدرنا ننشئ الحساب، جرّب مرة ثانية');
+      if (data?.session) { router.push(next); router.refresh(); return; }       // email confirmation turned off: straight in
+      router.push('/welcome?email=' + encodeURIComponent(email));
     }
   }
 

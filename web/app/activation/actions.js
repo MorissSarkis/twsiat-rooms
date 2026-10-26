@@ -7,7 +7,7 @@ const ERR = { 'phone required': 'phone', 'bad phone': 'phone_bad', 'bad account'
 
 // one activation form for the alerts page and the rooms page
 export async function submitActivation(formData) {
-  const back = String(formData.get('back') || '') === '/rooms' ? '/rooms' : '/alerts';
+  const back = ['/rooms', '/home'].includes(String(formData.get('back') || '')) ? String(formData.get('back')) : '/alerts';
   const sb = supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect('/login?next=' + back);
@@ -18,7 +18,7 @@ export async function submitActivation(formData) {
     p_has_ib: hasIb,
     p_phone: String(formData.get('phone') || ''),
   });
-  revalidatePath('/alerts'); revalidatePath('/rooms');
+  revalidatePath('/alerts'); revalidatePath('/rooms'); revalidatePath('/home');
   if (error) {
     const key = Object.keys(ERR).find((k) => error.message.includes(k));
     redirect(`${back}?e=${key ? ERR[key] : 'act'}`);

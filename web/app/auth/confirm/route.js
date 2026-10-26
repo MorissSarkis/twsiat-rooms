@@ -12,5 +12,5 @@ export async function GET(request) {
   if (!token_hash || !TYPES.includes(type)) return NextResponse.redirect(new URL('/login?e=link', base));
   const { error } = await supabaseServer().auth.verifyOtp({ type, token_hash });
   if (error) return NextResponse.redirect(new URL('/login?e=link', base));
-  return NextResponse.redirect(new URL(type === 'recovery' ? '/reset' : '/rooms', base));
+  return NextResponse.redirect(new URL(type === 'recovery' ? '/reset' : '/home', base));
 }

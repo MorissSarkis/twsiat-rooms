@@ -19,7 +19,6 @@ export default async function Rooms({ searchParams }) {
       <>
         <TopBar profile={profile} />
         <main className="wrap grid" style={{ maxWidth: 560 }}>
-          <TelegramPrompt link={tgLink} />
           <h1>فعّل غرف الخبراء</h1>
           <div className="muted" style={{ lineHeight: 1.8 }}>
             غرف توصيات خبراء موقع توصيات مجانية لعملاء وكالتنا. أدخل رقم حساب التداول مرة وحدة بس عشان نتأكد إنه مفتوح تحت وكالتنا،
