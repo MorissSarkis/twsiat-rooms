@@ -1,12 +1,13 @@
 import TopBar from '../../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { when } from '@/lib/format';
-import { grantAlerts } from '../actions';
+import { grantAlerts, setRole } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
 const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['transfer', 'بدهم نقل حساب'], ['ib', 'عملاء الوكالة'], ['trial', 'تجربة 48 ساعة'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
 const PER_PAGE = 50;
+const ROLES = [['client', 'عميل'], ['analyst', 'محلل (فريق)'], ['manager', 'مدير (فريق)'], ['admin', 'أدمن']];
 
 function Status({ m }) {
   if (['analyst', 'manager', 'admin'].includes(m.role)) return <span className="badge" style={{ background: '#8FA3BF' }}>فريق</span>;
@@ -84,6 +85,16 @@ export default async function Members({ searchParams }) {
                   {m.room && <> · غرفة {m.room}</>}
                   {m.verified_at && <> · فعّله {m.verified_by_name || 'الإدارة'} <span className="ltr">{when(m.verified_at)}</span></>}
                 </div>
+              )}
+              {profile.role === 'admin' && m.id !== profile.id && (
+                <form action={setRole} className="row" style={{ gap: 8 }}>
+                  <input type="hidden" name="id" value={m.id} />
+                  <span className="muted">الدور:</span>
+                  <select name="role" defaultValue={m.role} style={{ minHeight: 32, padding: '0 8px', width: 'auto' }}>
+                    {ROLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                  </select>
+                  <button className="btn ghost" style={{ minHeight: 32, padding: '0 12px' }}>حفظ</button>
+                </form>
               )}
               {m.activation_rejected_at && <div className="bad" style={{ fontSize: 13 }}>رُفض الطلب <span className="ltr">{when(m.activation_rejected_at)}</span>{m.activation_note ? ` — ${m.activation_note}` : ''}</div>}
               <div className="row" style={{ justifyContent: 'space-between' }}>

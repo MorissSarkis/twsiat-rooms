@@ -74,3 +74,10 @@ export async function rejectActivation(formData) {
   await sb.rpc('admin_reject_activation', { p_user: String(formData.get('id')), p_note: String(formData.get('note') || '') });
   revalidatePath('/admin');
 }
+
+// admin only: make someone team (analyst / manager / admin) or back to client
+export async function setRole(formData) {
+  const { sb } = await staff();
+  await sb.rpc('admin_set_role', { p_user: String(formData.get('id')), p_role: String(formData.get('role')) });
+  revalidatePath('/admin/members');
+}
