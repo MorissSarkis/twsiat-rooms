@@ -57,6 +57,8 @@ export default async function Alerts({ searchParams }) {
                 {access.reason === 'trial' && <>باقي <b>{hoursLeft(access.until)}</b> من التجربة المجانية (48 ساعة).</>}
                 {access.reason === 'ib' && 'مجاناً لعملاء وكالة موقع توصيات.'}
                 {access.reason === 'staff' && 'حساب فريق العمل.'}
+                {access.reason === 'employee' && 'حساب موظف.'}
+                {access.reason === 'vip' && 'مجاناً إلك.'}
                 {access.reason === 'paid' && <>اشتراك مدفوع لغاية <span className="ltr">{day(access.until)}</span>.</>}
               </div>
             </div>

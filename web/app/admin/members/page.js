@@ -7,10 +7,12 @@ export const dynamic = 'force-dynamic';
 
 const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['transfer', 'بدهم نقل حساب'], ['ib', 'عملاء الوكالة'], ['trial', 'تجربة 48 ساعة'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
 const PER_PAGE = 50;
-const ROLES = [['client', 'عميل'], ['analyst', 'محلل (فريق)'], ['manager', 'مدير (فريق)'], ['admin', 'أدمن']];
+const ROLES = [['client', 'عميل'], ['vip', 'عميل مجاني (VIP)'], ['employee', 'موظف (تنبيهات وغرف بس)'], ['analyst', 'محلل (بيكتب توصيات)'], ['manager', 'مدير'], ['admin', 'أدمن']];
 
 function Status({ m }) {
   if (['analyst', 'manager', 'admin'].includes(m.role)) return <span className="badge" style={{ background: '#8FA3BF' }}>فريق</span>;
+  if (m.role === 'employee') return <span className="badge" style={{ background: '#8FA3BF' }}>موظف</span>;
+  if (m.role === 'vip') return <span className="badge" style={{ background: '#C59BFF' }}>VIP مجاني</span>;
   if (m.ib_verified) return <span className="badge buy">عميل وكالة</span>;
   if (m.activation_rejected_at) return <span className="badge sell">طلب مرفوض</span>;
   if (m.activation_requested_at && m.has_ib_account === false) return <span className="badge" style={{ background: 'var(--gold)' }}>بدّه نقل حساب</span>;
@@ -99,12 +101,12 @@ export default async function Members({ searchParams }) {
               {m.activation_rejected_at && <div className="bad" style={{ fontSize: 13 }}>رُفض الطلب <span className="ltr">{when(m.activation_rejected_at)}</span>{m.activation_note ? ` — ${m.activation_note}` : ''}</div>}
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">
-                  التنبيهات: {m.alerts_reason === 'ib' ? 'مجاني (وكالة)' : m.alerts_reason === 'staff' ? 'فريق'
+                  التنبيهات: {m.alerts_reason === 'ib' ? 'مجاني (وكالة)' : m.alerts_reason === 'staff' ? 'فريق' : m.alerts_reason === 'employee' ? 'موظف' : m.alerts_reason === 'vip' ? 'مجاني (VIP)'
                     : paid ? <>مدفوع لغاية <span className="ltr">{when(m.alerts_paid_until)}</span></>
                     : m.alerts_reason === 'trial' ? <>تجربة لغاية <span className="ltr">{when(m.alerts_trial_until)}</span></>
                     : m.alerts_paid_until ? <span className="bad">انتهى <span className="ltr">{when(m.alerts_paid_until)}</span></span> : 'لا'}
                 </span>
-                {m.alerts_reason !== 'ib' && m.alerts_reason !== 'staff' && (
+                {!['ib', 'staff', 'employee', 'vip'].includes(m.alerts_reason) && (
                   <div className="row" style={{ flexWrap: 'nowrap' }}>
                     <form action={grantAlerts}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="days" value="30" /><button className="btn ghost" style={{ minHeight: 32, padding: '0 10px' }}>تنبيهات +30 يوم</button></form>
                     {paid && <form action={grantAlerts}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="days" value="0" /><button className="btn red" style={{ minHeight: 32, padding: '0 10px' }}>إيقاف</button></form>}

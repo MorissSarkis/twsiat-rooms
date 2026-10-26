@@ -41,6 +41,8 @@ export default async function Home({ searchParams }) {
     : a.reason === 'ib' ? ['ok', '✅ مجانية إلك كعميل وكالة']
     : a.reason === 'paid' ? ['ok', `✅ مشترك لغاية ${day(a.until)}`]
     : a.reason === 'staff' ? ['ok', '✅ حساب الفريق']
+    : a.reason === 'employee' ? ['ok', '✅ مجانية: موظف']
+    : a.reason === 'vip' ? ['ok', '✅ مجانية إلك']
     : a.reason === 'trial_over' ? ['bad', 'انتهت التجربة المجانية (48 ساعة)']
     : a.reason === 'expired' ? ['bad', `انتهى الاشتراك ${a.until ? day(a.until) : ''}`]
     : ['off', 'مش مفعّلة'];
