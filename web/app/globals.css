@@ -76,3 +76,22 @@ input[type=checkbox],input[type=radio]{width:auto;height:auto}
 .more-menu a,.more-menu .linkbtn{padding:9px 12px;border-radius:8px;text-align:right}
 .more-menu a:hover,.more-menu .linkbtn:hover{background:#1B2436}
 .linkbtn{background:none;border:0;color:var(--sell);font:inherit;font-size:14px;cursor:pointer;width:100%}
+/* home tiles: the whole card is one big button */
+html{scroll-behavior:smooth}
+.tile{display:grid;gap:6px;width:100%;text-align:right;font:inherit;color:var(--text);cursor:pointer;border-radius:18px;padding:18px;
+  border:1.5px solid;text-decoration:none;transition:transform .12s ease, box-shadow .12s ease;-webkit-tap-highlight-color:transparent}
+.tile:active{transform:scale(.985)}
+.tile:hover{box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.tile-alerts{background:linear-gradient(135deg,rgba(38,198,118,.16),rgba(21,31,46,.95) 60%);border-color:rgba(38,198,118,.45)}
+.tile-rooms{background:linear-gradient(135deg,rgba(232,181,74,.16),rgba(21,31,46,.95) 60%);border-color:rgba(232,181,74,.45)}
+.tile-head{display:flex;align-items:center;gap:10px;font-size:19px}
+.tile-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(255,255,255,.07);flex:none}
+.tile-arrow{margin-right:auto;font-size:30px;line-height:1;opacity:.75}
+.tile-text{color:var(--soft);font-size:14px;line-height:1.7}
+.tile-cta{margin-top:8px;display:grid;place-items:center;min-height:46px;border-radius:12px;font-weight:700;font-size:16px}
+.tile-alerts .tile-cta{background:var(--buy);color:#06160d}
+.tile-rooms .tile-cta{background:var(--gold);color:#1a1205}
+.scroll-hint{display:flex;flex-direction:column;align-items:center;gap:0;color:var(--muted);font-size:14px;text-decoration:none;padding:4px 0}
+.scroll-hint .chev{font-size:34px;line-height:.7;color:var(--gold);animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+@media (prefers-reduced-motion:reduce){.scroll-hint .chev{animation:none}.tile{transition:none}}

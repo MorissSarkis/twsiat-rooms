@@ -10,6 +10,17 @@ export const dynamic = 'force-dynamic';
 const hoursLeft = (t) => { const h = Math.max(0, Math.ceil((new Date(t) - Date.now()) / 36e5)); return h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
 const day = (t) => new Date(t).toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' });
 
+function TileBody({ icon, title, text, status, cta }) {
+  return (
+    <>
+      <div className="tile-head"><span className="tile-icon">{icon}</span><b>{title}</b><span className="tile-arrow">‹</span></div>
+      <div className="tile-text">{text}</div>
+      <Status tone={status[0]}>{status[1]}</Status>
+      <span className="tile-cta">{cta}</span>
+    </>
+  );
+}
+
 function Status({ tone, children }) {
   const c = { ok: 'var(--buy)', wait: 'var(--gold)', off: 'var(--muted)', bad: 'var(--sell)' }[tone];
   return <div style={{ color: c, fontWeight: 600, fontSize: 14, margin: '10px 0 2px' }}>{children}</div>;
@@ -47,25 +58,35 @@ export default async function Home({ searchParams }) {
         {err && <div className="err">{err}</div>}
         {searchParams?.ok === 'act' && <div className="card hl"><b>وصلنا طلبك ✅</b><div className="muted" style={{ marginTop: 4 }}>رح نتواصل معك قريباً.</div></div>}
 
-        <div className="card grid" style={{ gap: 6 }}>
-          <b style={{ fontSize: 18 }}>🔔 تنبيهات البيفوت</b>
-          <div className="muted" style={{ lineHeight: 1.7 }}>إشعار على موبايلك لما يوصل السعر لمستويات الدعم والمقاومة اليومية، على 57 أداة.</div>
-          <Status tone={alertsStatus[0]}>{alertsStatus[1]}</Status>
-          {a.ok
-            ? <form action={openAlerts}><button className="btn green" style={{ width: '100%', marginTop: 6 }}>افتح تطبيق التنبيهات</button></form>
-            : <a className="btn" style={{ marginTop: 6 }} href="/alerts">فعّلها مجاناً أو اشترك</a>}
-        </div>
+        {/* two big tappable tiles: the whole tile is the button */}
+        {a.ok ? (
+          <form action={openAlerts}>
+            <button className="tile tile-alerts">
+              <TileBody icon="🔔" title="تنبيهات البيفوت" text="إشعار على موبايلك لما يوصل السعر لمستويات الدعم والمقاومة اليومية، على 57 أداة."
+                status={alertsStatus} cta="افتح تطبيق التنبيهات" />
+            </button>
+          </form>
+        ) : (
+          <a className="tile tile-alerts" href={verified ? '/alerts' : '#activate'}>
+            <TileBody icon="🔔" title="تنبيهات البيفوت" text="إشعار على موبايلك لما يوصل السعر لمستويات الدعم والمقاومة اليومية، على 57 أداة."
+              status={alertsStatus} cta={verified ? 'افتح التنبيهات' : 'فعّلها مجاناً'} />
+          </a>
+        )}
+        <a className="tile tile-rooms" href={verified ? '/rooms' : '#activate'}>
+          <TileBody icon="💬" title="غرف توصيات الخبراء" text="أفكار تداول جاهزة: الدخول، الستوب، الأهداف، وحجم اللوت المناسب لحسابك."
+            status={roomsStatus} cta={verified ? 'ادخل غرفتك' : roomsStatus[0] === 'wait' ? 'شوف حالة طلبك' : 'افتح الغرف مجاناً'} />
+        </a>
 
-        <div className="card grid" style={{ gap: 6 }}>
-          <b style={{ fontSize: 18 }}>💬 غرف توصيات الخبراء</b>
-          <div className="muted" style={{ lineHeight: 1.7 }}>أفكار تداول جاهزة: الدخول، الستوب، الأهداف، وحجم اللوت المناسب لحسابك.</div>
-          <Status tone={roomsStatus[0]}>{roomsStatus[1]}</Status>
-          {verified && <a className="btn green" style={{ marginTop: 6 }} href="/rooms">ادخل غرفتك</a>}
-        </div>
+        {!verified && (
+          <a className="scroll-hint" href="#activate" aria-label="انزل لتحت">
+            <span>خطوة وحدة وكل شي بيصير مجاني</span>
+            <span className="chev">⌄</span>
+          </a>
+        )}
 
         {verified ? <TelegramPrompt link={tgLink} /> : (
           <>
-            <div style={{ marginTop: 6 }}>
+            <div id="activate" style={{ marginTop: 6, scrollMarginTop: 16 }}>
               <h2 style={{ marginBottom: 4 }}>⭐ خلّي كل شي مجاني</h2>
               <div className="muted" style={{ lineHeight: 1.8 }}>
                 عندك حساب تداول تحت وكالة موقع توصيات؟ التنبيهات والغرف مجانية إلك. ما عندك؟ اترك رقم واتساب ومنساعدك.
