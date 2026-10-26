@@ -16,9 +16,9 @@ export async function GET(request) {
     p_search: u.searchParams.get('q') || null, p_status: u.searchParams.get('s') || null, p_limit: 5000, p_offset: 0,
   });
   if (error) return new NextResponse('not allowed', { status: 403 });
-  const head = ['name', 'email', 'signed_up', 'last_login', 'login_with', 'ib_client', 'activation_requested', 'broker', 'broker_account', 'balance_usd', 'room', 'alerts', 'alerts_paid_until'];
+  const head = ['name', 'email', 'phone', 'under_our_agency', 'signed_up', 'last_login', 'login_with', 'ib_client', 'activation_requested', 'broker', 'broker_account', 'balance_usd', 'room', 'alerts', 'alerts_paid_until'];
   const lines = (data || []).map((m) => [
-    m.name, m.email, m.signed_up?.slice(0, 10), m.last_login?.slice(0, 10), m.provider, m.ib_verified ? 'yes' : 'no',
+    m.name, m.email, m.phone, m.has_ib_account == null ? '' : m.has_ib_account ? 'yes' : 'no', m.signed_up?.slice(0, 10), m.last_login?.slice(0, 10), m.provider, m.ib_verified ? 'yes' : 'no',
     m.activation_requested_at?.slice(0, 10), m.broker, m.broker_account, m.balance_usd, m.room, m.alerts_reason, m.alerts_paid_until?.slice(0, 10),
   ].map(cell).join(','));
   const csv = '﻿' + [head.join(','), ...lines].join('\r\n');

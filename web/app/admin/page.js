@@ -1,7 +1,7 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { symName, fmt, STATE_AR, when } from '@/lib/format';
-import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts } from './actions';
+import { approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts, rejectActivation } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export default async function Admin() {
   const canDecide = ['manager', 'admin'].includes(profile.role);
   const [{ data: pending }, { data: queue }, { data: recent }, { data: log }] = await Promise.all([
     sb.from('suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
-    sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at').eq('ib_verified', false).not('activation_requested_at', 'is', null).order('activation_requested_at'),
+    sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at,phone,has_ib_account').eq('ib_verified', false).not('activation_requested_at', 'is', null).is('activation_rejected_at', null).order('activation_requested_at'),
     sb.from('signals').select('*').eq('shadow', false).order('published_at', { ascending: false }).limit(20),
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
@@ -58,14 +58,31 @@ export default async function Admin() {
             <h2>طلبات تفعيل العملاء {queue?.length ? <span className="badge sell">{queue.length}</span> : '(0)'}</h2>
             {(!queue || queue.length === 0) && <div className="card muted">ما في طلبات.</div>}
             {queue?.map((c) => (
-              <form key={c.id} action={verifyClient} className="card hl row" style={{ justifyContent: 'space-between' }}>
-                <input type="hidden" name="id" value={c.id} />
-                <div><b>{c.display_name}</b>{emails?.[c.id] && <div className="ltr muted" style={{ textAlign: 'right' }}>{emails[c.id]}</div>}<div className="muted">{c.broker} · <span className="ltr">{c.broker_account}</span> · {when(c.activation_requested_at)}</div></div>
-                <div className="row">
-                  <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
-                  <button className="btn">فعّل</button>
+              <div key={c.id} className="card hl grid" style={{ gap: 10 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <div>
+                    <b>{c.display_name}</b>{' '}
+                    {c.has_ib_account === false
+                      ? <span className="badge" style={{ background: 'var(--gold)' }}>بدّه مساعدة بنقل/فتح حساب</span>
+                      : <span className="badge buy">بيقول حسابه تحت وكالتنا</span>}
+                    {emails?.[c.id] && <div className="ltr muted" style={{ textAlign: 'right' }}>{emails[c.id]}</div>}
+                    <div className="muted">{c.broker || '—'} · <span className="ltr">{c.broker_account || '—'}</span> · {when(c.activation_requested_at)}</div>
+                  </div>
+                  {c.phone && <a className="btn ghost" href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener"><span className="ltr">{c.phone}</span> · واتساب</a>}
                 </div>
-              </form>
+                <div className="grid g2">
+                  <form action={verifyClient} className="row">
+                    <input type="hidden" name="id" value={c.id} />
+                    <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
+                    <button className="btn">فعّل</button>
+                  </form>
+                  <form action={rejectActivation} className="row">
+                    <input type="hidden" name="id" value={c.id} />
+                    <input name="note" placeholder="السبب (بيشوفه العميل)" style={{ flex: 1 }} />
+                    <button className="btn red">رفض / إغلاق</button>
+                  </form>
+                </div>
+              </div>
             ))}
           </>
         )}

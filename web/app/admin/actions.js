@@ -67,3 +67,10 @@ export async function grantAlerts(formData) {
   await sb.rpc('alerts_grant_days', { p_user: String(formData.get('id')), p_days: Number(formData.get('days')) });
   revalidatePath('/admin');
 }
+
+// close an activation request with a reason the member sees (not under our agency, wrong number, ...)
+export async function rejectActivation(formData) {
+  const { sb } = await staff();
+  await sb.rpc('admin_reject_activation', { p_user: String(formData.get('id')), p_note: String(formData.get('note') || '') });
+  revalidatePath('/admin');
+}

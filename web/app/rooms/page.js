@@ -1,14 +1,14 @@
-import { wa, BROKERS } from '@/lib/brand';
+import ActivationBox, { ACT_ERRORS } from '../activation/box';
 import TopBar from '../TopBar';
 import TelegramPrompt from '../TelegramPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
 import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
-import { requestActivation, acceptDisclaimer } from './actions';
+import { acceptDisclaimer } from './actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Rooms() {
+export default async function Rooms({ searchParams }) {
   const { sb, user, profile } = await currentUser();
   if (!profile) return null;
   const { data: tgLink } = await sb.rpc('my_telegram_link');
@@ -22,30 +22,11 @@ export default async function Rooms() {
           <TelegramPrompt link={tgLink} />
           <h1>فعّل غرف الخبراء</h1>
           <div className="muted" style={{ lineHeight: 1.8 }}>
-            غرف توصيات خبراء موقع توصيات متاحة لعملائنا. أدخل رقم حساب التداول مرة وحدة بس عشان نتأكد إنه مفتوح تحت وكالتنا.
-            رقم الحساب ما بيظهر لأي حد.
+            غرف توصيات خبراء موقع توصيات مجانية لعملاء وكالتنا. أدخل رقم حساب التداول مرة وحدة بس عشان نتأكد إنه مفتوح تحت وكالتنا،
+            أو اطلب مساعدتنا بفتح أو نقل حساب. رقم الحساب ما بيظهر لأي حد.
           </div>
-          {profile.activation_requested_at ? (
-            <div className="card hl">
-              <b>طلبك وصلنا ✅</b>
-              <div className="muted" style={{ marginTop: 6, lineHeight: 1.8 }}>فريقنا بيراجعه وبيفعّل حسابك خلال وقت قصير. ارجع لهالصفحة بعد شوي، أو راسلنا على واتساب لتسريع التفعيل.</div>
-              <a className="btn green" style={{ marginTop: 12, width: '100%' }} href={wa('مرحبا، سجّلت بغرفة التوصيات وبعتت طلب تفعيل. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">راسلنا على واتساب</a>
-            </div>
-          ) : (
-            <form action={requestActivation} className="card grid">
-              <label>شركة التداول
-                <select name="broker" defaultValue="Exness">{BROKERS.map((b) => <option key={b}>{b}</option>)}</select>
-              </label>
-              <label>رقم حساب التداول (MT4 / MT5)
-                <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required />
-              </label>
-              <button className="btn">أرسل طلب التفعيل</button>
-            </form>
-          )}
-          <div className="note grid" style={{ gap: 10 }}>
-            <span>ما عندك حساب تحت وكالتنا؟ تواصل مع فريق موقع توصيات لفتح حساب.</span>
-            <a className="btn ghost" href={wa('مرحبا، بدي افتح حساب تداول تحت وكالة موقع توصيات لأدخل غرف التوصيات.')} target="_blank" rel="noopener">تواصل معنا على واتساب</a>
-          </div>
+          {ACT_ERRORS[searchParams?.e] && <div className="err">{ACT_ERRORS[searchParams.e]}</div>}
+          <ActivationBox profile={profile} user={user} back="/rooms" />
         </main>
       </>
     );

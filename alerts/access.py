@@ -96,7 +96,7 @@ class Directory:
         if not e.get("ok"):
             return False
         until = e.get("until")
-        if e.get("reason") == "paid" and until:   # don't wait for the next check to stop at the end date
+        if e.get("reason") in ("paid", "trial") and until:   # stop at the end date without waiting for the next check
             try:
                 from datetime import datetime
                 return datetime.fromisoformat(until.replace("Z", "+00:00")).timestamp() > time.time()

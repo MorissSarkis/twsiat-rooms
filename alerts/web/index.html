@@ -240,6 +240,7 @@ const I18N = {
     today: "اليوم", yesterday: "مبارح", locale: "ar",
     noAlerts: "ما في تنبيهات لسا. أول ما يوصل السعر لمستوى بتظهر هون.", noMuted: "ولا أصل مكتوم.", listSep: "، ",
     planIb: "مجاني — عميل وكالة موقع توصيات", planPaid: (d) => `اشتراك لغاية ${d}`, renew: "تجديد", planStaff: "فريق العمل", planOwner: "الإدارة",
+    planTrial: (d) => `تجربة مجانية لغاية ${d}`, keepFree: "خلّيها مجانية",
     lastUpdate: "آخر تحديث للأسعار", devicesOn: "أجهزة مفعّل عليها الإشعارات", usersPush: "مستخدمين عندهم إشعارات", devices: "أجهزة",
     iosStatus: "على الآيفون لازم تضيف التطبيق للشاشة الرئيسية أول: زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»، وبعدها افتحه من الأيقونة.",
     iosBannerT: "ثبّت التطبيق عشان توصلك الإشعارات", iosBannerS: "زر المشاركة ⬆️ ← «إضافة إلى الشاشة الرئيسية»",
@@ -273,6 +274,7 @@ const I18N = {
     today: "Today", yesterday: "Yesterday", locale: "en-GB",
     noAlerts: "No alerts yet. They appear here as soon as the price reaches a level.", noMuted: "No muted assets.", listSep: ", ",
     planIb: "Free: Twsiat agency client", planPaid: (d) => `Subscription until ${d}`, renew: "Renew", planStaff: "Team", planOwner: "Admin",
+    planTrial: (d) => `Free trial until ${d}`, keepFree: "Keep it free",
     lastUpdate: "Last price update", devicesOn: "Devices with notifications", usersPush: "Users with notifications", devices: "devices",
     iosStatus: "On iPhone, add the app to your Home Screen first: Share ⬆️ → \"Add to Home Screen\", then open it from the icon.",
     iosBannerT: "Install the app to get notifications", iosBannerS: "Share ⬆️ → \"Add to Home Screen\"",
@@ -517,6 +519,7 @@ function renderSettings() {
   const me = S.me || {};
   const plan = me.reason === "ib" ? t("planIb")
     : me.reason === "paid" && me.until ? `${t("planPaid", `<span class="num">${new Date(me.until).toLocaleDateString("en-GB")}</span>`)}${me.members ? ` · <a href="${esc(me.members)}" style="color:var(--amber)">${t("renew")}</a>` : ""}`
+    : me.reason === "trial" && me.until ? `${t("planTrial", `<span class="num">${new Date(me.until).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}</span>`)}${me.members ? ` · <a href="${esc(me.members)}" style="color:var(--amber)">${t("keepFree")}</a>` : ""}`
     : me.reason === "staff" ? t("planStaff") : me.reason === "owner" ? t("planOwner") : "";
   $("sysInfo").innerHTML = (me.name ? `${esc(me.name)}<br>` : "") + (plan ? `${plan}<br>` : "")
     + `${t("lastUpdate")}: <span class="num">${S.lastPoll ? new Date(S.lastPoll).toLocaleTimeString("en-GB") : "—"}</span><br>${t("devicesOn")}: <span class="num">${S.devices}</span>`

@@ -5,12 +5,14 @@ import { grantAlerts } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
-const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['ib', 'عملاء الوكالة'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
+const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['transfer', 'بدهم نقل حساب'], ['ib', 'عملاء الوكالة'], ['trial', 'تجربة 48 ساعة'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
 const PER_PAGE = 50;
 
 function Status({ m }) {
   if (['analyst', 'manager', 'admin'].includes(m.role)) return <span className="badge" style={{ background: '#8FA3BF' }}>فريق</span>;
   if (m.ib_verified) return <span className="badge buy">عميل وكالة</span>;
+  if (m.activation_rejected_at) return <span className="badge sell">طلب مرفوض</span>;
+  if (m.activation_requested_at && m.has_ib_account === false) return <span className="badge" style={{ background: 'var(--gold)' }}>بدّه نقل حساب</span>;
   if (m.activation_requested_at) return <span className="badge" style={{ background: 'var(--gold)' }}>طلب تفعيل</span>;
   return <span className="badge" style={{ background: '#3A4658', color: 'var(--soft)' }}>مسجّل</span>;
 }
@@ -66,7 +68,10 @@ export default async function Members({ searchParams }) {
                 <span className="muted">سجّل <span className="ltr">{when(m.signed_up)}</span></span>
               </div>
               <div className="row" style={{ justifyContent: 'space-between' }}>
-                <a className="ltr" href={`mailto:${m.email}`} style={{ color: 'var(--text)' }}>{m.email}</a>
+                <span className="row" style={{ gap: 10 }}>
+                  <a className="ltr" href={`mailto:${m.email}`} style={{ color: 'var(--text)' }}>{m.email}</a>
+                  {m.phone && <a className="ltr" href={`https://wa.me/${m.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener" style={{ color: 'var(--buy)' }}>{m.phone}</a>}
+                </span>
                 <span className="muted">
                   {m.provider === 'google' ? 'Google' : 'إيميل'}{!m.email_confirmed && m.provider !== 'google' ? ' (ما أكّد الإيميل)' : ''}
                   {' · '}آخر دخول <span className="ltr">{when(m.last_login)}</span>
@@ -80,10 +85,12 @@ export default async function Members({ searchParams }) {
                   {m.verified_at && <> · فعّله {m.verified_by_name || 'الإدارة'} <span className="ltr">{when(m.verified_at)}</span></>}
                 </div>
               )}
+              {m.activation_rejected_at && <div className="bad" style={{ fontSize: 13 }}>رُفض الطلب <span className="ltr">{when(m.activation_rejected_at)}</span>{m.activation_note ? ` — ${m.activation_note}` : ''}</div>}
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">
                   التنبيهات: {m.alerts_reason === 'ib' ? 'مجاني (وكالة)' : m.alerts_reason === 'staff' ? 'فريق'
                     : paid ? <>مدفوع لغاية <span className="ltr">{when(m.alerts_paid_until)}</span></>
+                    : m.alerts_reason === 'trial' ? <>تجربة لغاية <span className="ltr">{when(m.alerts_trial_until)}</span></>
                     : m.alerts_paid_until ? <span className="bad">انتهى <span className="ltr">{when(m.alerts_paid_until)}</span></span> : 'لا'}
                 </span>
                 {m.alerts_reason !== 'ib' && m.alerts_reason !== 'staff' && (

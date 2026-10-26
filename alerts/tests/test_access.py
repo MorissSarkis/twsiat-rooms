@@ -42,3 +42,9 @@ def test_refresh_and_unknown_user(tmp_path):
     d.refresh(["a", "b", "owner"])
     assert d.ok("a") and not d.ok("b")
     assert not d.ok("c") and calls.count("alerts_check_users") == 2    # unknown -> asked once
+
+
+def test_trial_stops_at_end_time(tmp_path):
+    d, _ = make(tmp_path, lambda fn, p: {})
+    d._store("t1", {"ok": True, "reason": "trial", "until": "2001-01-01T00:00:00+00:00"})
+    assert not d.ok("t1")

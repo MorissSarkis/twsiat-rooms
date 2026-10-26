@@ -1,7 +1,7 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { wa, BROKERS } from '@/lib/brand';
-import { requestActivation } from '../rooms/actions';
+import { wa } from '@/lib/brand';
+import ActivationBox, { ACT_ERRORS } from '../activation/box';
 import { openAlerts, submitPayment } from './actions';
 import CopyButton from './copy';
 
@@ -17,6 +17,7 @@ const ERRORS = {
 };
 const STATUS_AR = { pending: 'قيد المراجعة', approved: 'تمت الموافقة ✓', rejected: 'مرفوضة' };
 const day = (t) => new Date(t).toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' });
+const hoursLeft = (t) => { const h = Math.max(0, Math.ceil((new Date(t) - Date.now()) / 36e5)); return h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
 
 export default async function Alerts({ searchParams }) {
   const { sb, user, profile } = await currentUser();
@@ -30,7 +31,7 @@ export default async function Alerts({ searchParams }) {
   const ok = access?.ok;
   const wallets = (plan?.wallets || []).filter((w) => w.address);
   const pendingPay = (payments || []).some((p) => p.status === 'pending');
-  const err = ERRORS[searchParams?.e];
+  const err = ERRORS[searchParams?.e] || ACT_ERRORS[searchParams?.e];
 
   return (
     <>
@@ -48,11 +49,12 @@ export default async function Alerts({ searchParams }) {
           </div>
         )}
 
-        {ok ? (
+        {ok && (
           <div className="card hl grid">
             <div>
-              <b style={{ fontSize: 17 }}>اشتراكك فعّال ✅</b>
+              <b style={{ fontSize: 17 }}>{access.reason === 'trial' ? 'تجربتك المجانية فعّالة ✅' : 'اشتراكك فعّال ✅'}</b>
               <div className="muted" style={{ marginTop: 4 }}>
+                {access.reason === 'trial' && <>باقي <b>{hoursLeft(access.until)}</b> من التجربة المجانية (48 ساعة).</>}
                 {access.reason === 'ib' && 'مجاناً لعملاء وكالة موقع توصيات.'}
                 {access.reason === 'staff' && 'حساب فريق العمل.'}
                 {access.reason === 'paid' && <>اشتراك مدفوع لغاية <span className="ltr">{day(access.until)}</span>.</>}
@@ -64,35 +66,28 @@ export default async function Alerts({ searchParams }) {
               على الآيفون: افتحه بـ Safari ← مشاركة ← «إضافة إلى الشاشة الرئيسية»، وبعدين افتحه من الأيقونة وفعّل الإشعارات.
             </div>
           </div>
-        ) : (
+        )}
+        {!ok && access?.reason === 'trial_over' && (
+          <div className="card"><b>انتهت التجربة المجانية (48 ساعة)</b>
+            <div className="muted" style={{ marginTop: 4, lineHeight: 1.8 }}>التنبيهات مجانية لعملاء وكالة موقع توصيات. فعّل حسابك من تحت، أو اشترك.</div></div>
+        )}
+        {!ok && access?.reason === 'expired' && (
+          <div className="card"><b>انتهى اشتراكك</b> <span className="muted">بتاريخ <span className="ltr">{day(access.until)}</span>. جدّده من تحت، أو فعّل حسابك كعميل وكالة.</span></div>
+        )}
+
+        {!profile.ib_verified && (!ok || access.reason === 'trial') && (
           <>
-            {access?.reason === 'expired' && (
-              <div className="card"><b>انتهى اشتراكك</b> <span className="muted">بتاريخ <span className="ltr">{day(access.until)}</span>. جدّده من تحت.</span></div>
-            )}
-
-            <h2>مجاناً لعملائنا</h2>
-            <div className="card grid">
-              <div className="muted" style={{ lineHeight: 1.8 }}>
-                إذا عندك حساب تداول فعّال تحت وكالة موقع توصيات، أو فتحت حساب جديد تحت وكالتنا، التنبيهات مجانية إلك.
-              </div>
-              {profile.activation_requested_at ? (
-                <div className="note">طلب التفعيل وصلنا ✅ فريقنا بيراجعه، وبعد التفعيل بتقدر تفتح التنبيهات من هون.
-                  <div style={{ marginTop: 8 }}><a className="btn ghost" href={wa('مرحبا، بعتت طلب تفعيل لتطبيق التنبيهات. إيميلي: ' + (user?.email || ''))} target="_blank" rel="noopener">سرّع التفعيل على واتساب</a></div>
-                </div>
-              ) : (
-                <form action={requestActivation} className="grid">
-                  <label>شركة التداول
-                    <select name="broker" defaultValue="Exness">{BROKERS.map((b) => <option key={b}>{b}</option>)}</select>
-                  </label>
-                  <label>رقم حساب التداول (MT4 / MT5)
-                    <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required />
-                  </label>
-                  <button className="btn">أرسل طلب التفعيل</button>
-                </form>
-              )}
-              <a className="btn ghost" href={wa('مرحبا، بدي افتح حساب تداول تحت وكالة موقع توصيات لأحصل على تطبيق التنبيهات مجاناً.')} target="_blank" rel="noopener">افتح حساب تحت وكالتنا</a>
+            <h2>{ok ? 'خلّيها مجانية بعد التجربة' : 'مجاناً لعملائنا'}</h2>
+            <div className="muted" style={{ lineHeight: 1.8 }}>
+              التنبيهات وغرف التوصيات مجانية لكل حدا عنده حساب تداول تحت وكالة موقع توصيات.
+              ما عندك؟ اختار «ما عندي حساب تحت وكالتكم» واكتب رقم واتساب، وفريقنا بيساعدك تفتح أو تنقل حسابك.
             </div>
+            <ActivationBox profile={profile} user={user} back="/alerts" />
+          </>
+        )}
 
+        {!ok && (
+          <>
             <h2>أو اشتراك مدفوع</h2>
             <div className="card grid">
               <div className="row" style={{ justifyContent: 'space-between' }}>
