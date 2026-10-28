@@ -9,7 +9,8 @@ import PhoneCard from '../phone/card';
 
 export const dynamic = 'force-dynamic';
 
-const hoursLeft = (t) => { const h = Math.max(0, Math.ceil((new Date(t) - Date.now()) / 36e5)); return h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
+const timeLeft = (t) => { const ms = new Date(t) - Date.now(); const h = Math.max(0, Math.ceil(ms / 36e5)); const d = Math.floor(ms / 864e5);
+  return d >= 2 ? `${d} يوم` : h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
 const day = (t) => new Date(t).toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' });
 
 function TileBody({ icon, title, text, status, cta }) {
@@ -38,13 +39,13 @@ export default async function Home({ searchParams }) {
   const verified = profile.ib_verified;
   const err = ACT_ERRORS[searchParams?.e];
 
-  const alertsStatus = a.reason === 'trial' ? ['ok', `✅ تجربة مجانية: باقي ${hoursLeft(a.until)}`]
+  const alertsStatus = a.reason === 'trial' ? ['ok', `✅ تجربة مجانية: باقي ${timeLeft(a.until)}`]
     : a.reason === 'ib' ? ['ok', '✅ مجانية إلك كعميل وكالة']
     : a.reason === 'paid' ? ['ok', `✅ مشترك لغاية ${day(a.until)}`]
     : a.reason === 'staff' ? ['ok', '✅ حساب الفريق']
     : a.reason === 'employee' ? ['ok', '✅ مجانية: موظف']
     : a.reason === 'vip' ? ['ok', '✅ مجانية إلك']
-    : a.reason === 'trial_over' ? ['bad', 'انتهت التجربة المجانية (48 ساعة)']
+    : a.reason === 'trial_over' ? ['bad', 'انتهت التجربة المجانية (14 يوم)']
     : a.reason === 'expired' ? ['bad', `انتهى الاشتراك ${a.until ? day(a.until) : ''}`]
     : ['off', 'مش مفعّلة'];
   const roomsStatus = verified ? ['ok', `✅ مفعّلة: ${ROOM_AR[profile.room || 1]}`]

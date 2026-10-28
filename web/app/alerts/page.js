@@ -17,7 +17,8 @@ const ERRORS = {
 };
 const STATUS_AR = { pending: 'قيد المراجعة', approved: 'تمت الموافقة ✓', rejected: 'مرفوضة' };
 const day = (t) => new Date(t).toLocaleDateString('en-GB', { timeZone: 'Asia/Riyadh' });
-const hoursLeft = (t) => { const h = Math.max(0, Math.ceil((new Date(t) - Date.now()) / 36e5)); return h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
+const timeLeft = (t) => { const ms = new Date(t) - Date.now(); const h = Math.max(0, Math.ceil(ms / 36e5)); const d = Math.floor(ms / 864e5);
+  return d >= 2 ? `${d} يوم` : h > 1 ? `${h} ساعة` : 'أقل من ساعة'; };
 
 export default async function Alerts({ searchParams }) {
   const { sb, user, profile } = await currentUser();
@@ -54,7 +55,7 @@ export default async function Alerts({ searchParams }) {
             <div>
               <b style={{ fontSize: 17 }}>{access.reason === 'trial' ? 'تجربتك المجانية فعّالة ✅' : 'اشتراكك فعّال ✅'}</b>
               <div className="muted" style={{ marginTop: 4 }}>
-                {access.reason === 'trial' && <>باقي <b>{hoursLeft(access.until)}</b> من التجربة المجانية (48 ساعة).</>}
+                {access.reason === 'trial' && <>باقي <b>{timeLeft(access.until)}</b> من التجربة المجانية (14 يوم).</>}
                 {access.reason === 'ib' && 'مجاناً لعملاء وكالة موقع توصيات.'}
                 {access.reason === 'staff' && 'حساب فريق العمل.'}
                 {access.reason === 'employee' && 'حساب موظف.'}
@@ -70,8 +71,8 @@ export default async function Alerts({ searchParams }) {
           </div>
         )}
         {!ok && access?.reason === 'trial_over' && (
-          <div className="card"><b>انتهت التجربة المجانية (48 ساعة)</b>
-            <div className="muted" style={{ marginTop: 4, lineHeight: 1.8 }}>التنبيهات مجانية لعملاء وكالة موقع توصيات. فعّل حسابك من تحت، أو اشترك.</div></div>
+          <div className="card"><b>انتهت التجربة المجانية (14 يوم)</b>
+            <div className="muted" style={{ marginTop: 4, lineHeight: 1.8 }}>لتكمّل: افتح حسابك تحت وكالة موقع توصيات وفعّله من تحت (مجاناً للأبد)، أو اشترك بالدفع.</div></div>
         )}
         {!ok && access?.reason === 'expired' && (
           <div className="card"><b>انتهى اشتراكك</b> <span className="muted">بتاريخ <span className="ltr">{day(access.until)}</span>. جدّده من تحت، أو فعّل حسابك كعميل وكالة.</span></div>

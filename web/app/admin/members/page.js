@@ -1,11 +1,11 @@
 import TopBar from '../../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { when } from '@/lib/format';
-import { grantAlerts, setRole, setRoom } from '../actions';
+import { grantAlerts, setRole, setRoom, extendTrial } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
-const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['transfer', 'بدهم نقل حساب'], ['ib', 'عملاء الوكالة'], ['trial', 'تجربة 48 ساعة'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
+const FILTERS = [['', 'الكل'], ['pending', 'طلبات تفعيل'], ['transfer', 'بدهم نقل حساب'], ['ib', 'عملاء الوكالة'], ['trial', 'تجربة مجانية'], ['paid', 'اشتراك مدفوع'], ['none', 'مسجّلين بس'], ['staff', 'الفريق']];
 const PER_PAGE = 50;
 const ROLES = [['client', 'عميل'], ['vip', 'عميل مجاني (VIP)'], ['employee', 'موظف (تنبيهات وغرف بس)'], ['analyst', 'محلل (بيكتب توصيات)'], ['manager', 'مدير'], ['admin', 'أدمن']];
 
@@ -119,7 +119,12 @@ export default async function Members({ searchParams }) {
                 </span>
                 {!['ib', 'staff', 'employee', 'vip'].includes(m.alerts_reason) && (
                   <div className="row" style={{ flexWrap: 'nowrap' }}>
-                    <form action={grantAlerts}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="days" value="30" /><button className="btn ghost" style={{ minHeight: 32, padding: '0 10px' }}>تنبيهات +30 يوم</button></form>
+                    <form action={extendTrial} className="row" style={{ flexWrap: 'nowrap', gap: 4 }}>
+                      <input type="hidden" name="id" value={m.id} />
+                      <input name="days" type="number" min="1" max="3660" defaultValue="14" required dir="ltr" style={{ width: 64, minHeight: 32, padding: '0 6px' }} />
+                      <button className="btn ghost" style={{ minHeight: 32, padding: '0 10px' }}>يوم مجاني</button>
+                    </form>
+                    <form action={grantAlerts}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="days" value="30" /><button className="btn ghost" style={{ minHeight: 32, padding: '0 10px' }}>مدفوع +30</button></form>
                     {paid && <form action={grantAlerts}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="days" value="0" /><button className="btn red" style={{ minHeight: 32, padding: '0 10px' }}>إيقاف</button></form>}
                   </div>
                 )}

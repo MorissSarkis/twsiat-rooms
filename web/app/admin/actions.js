@@ -68,6 +68,15 @@ export async function grantAlerts(formData) {
   revalidatePath('/admin');
 }
 
+// free alerts for any number of days (extends the trial; 0 ends it)
+export async function extendTrial(formData) {
+  const { sb } = await staff();
+  const days = Math.max(0, Math.min(3660, parseInt(formData.get('days'), 10) || 0));
+  await sb.rpc('admin_extend_trial', { p_user: String(formData.get('id')), p_days: days });
+  revalidatePath('/admin/members');
+  revalidatePath('/admin');
+}
+
 // close an activation request with a reason the member sees (not under our agency, wrong number, ...)
 export async function rejectActivation(formData) {
   const { sb } = await staff();
