@@ -81,3 +81,12 @@ export async function setRole(formData) {
   await sb.rpc('admin_set_role', { p_user: String(formData.get('id')), p_role: String(formData.get('role')) });
   revalidatePath('/admin/members');
 }
+
+// move a member between room 1 and room 2 (also answers an upgrade request)
+export async function setRoom(formData) {
+  const { sb } = await staff();
+  const bal = formData.get('balance');
+  await sb.rpc('admin_set_room', { p_user: String(formData.get('id')), p_room: Number(formData.get('room')),
+    p_balance: bal === null || bal === '' ? null : Number(bal) });
+  revalidatePath('/admin'); revalidatePath('/admin/members');
+}

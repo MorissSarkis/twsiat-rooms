@@ -1,7 +1,7 @@
 import TopBar from '../../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { when } from '@/lib/format';
-import { grantAlerts, setRole } from '../actions';
+import { grantAlerts, setRole, setRoom } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,6 +95,17 @@ export default async function Members({ searchParams }) {
                   <select name="role" defaultValue={m.role} style={{ minHeight: 32, padding: '0 8px', width: 'auto' }}>
                     {ROLES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                   </select>
+                  <button className="btn ghost" style={{ minHeight: 32, padding: '0 12px' }}>حفظ</button>
+                </form>
+              )}
+              {m.ib_verified && (
+                <form action={setRoom} className="row" style={{ gap: 8 }}>
+                  <input type="hidden" name="id" value={m.id} />
+                  <span className="muted">الغرفة:</span>
+                  <select name="room" defaultValue={m.room || 1} style={{ minHeight: 32, padding: '0 8px', width: 'auto' }}>
+                    <option value="1">1 · أقل من 1,000$</option><option value="2">2 · 1,000$ وأكثر</option>
+                  </select>
+                  <input name="balance" type="number" defaultValue={m.balance_usd ?? ''} placeholder="الرصيد $" dir="ltr" style={{ width: 110, minHeight: 32 }} />
                   <button className="btn ghost" style={{ minHeight: 32, padding: '0 12px' }}>حفظ</button>
                 </form>
               )}

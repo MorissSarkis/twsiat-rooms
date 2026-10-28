@@ -4,7 +4,8 @@ import TelegramPrompt from '../TelegramPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
 import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
-import { acceptDisclaimer } from './actions';
+import { acceptDisclaimer, requestUpgrade } from './actions';
+import { wa } from '@/lib/brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +14,10 @@ export default async function Rooms({ searchParams }) {
   if (!profile) return null;
   const { data: tgLink } = await sb.rpc('my_telegram_link');
 
+  const staff = ['analyst', 'manager', 'admin'].includes(profile.role);
+
   // 1) not verified yet → activation
-  if (!profile.ib_verified) {
+  if (!profile.ib_verified && !staff) {
     return (
       <>
         <TopBar profile={profile} />
@@ -31,10 +34,22 @@ export default async function Rooms({ searchParams }) {
     );
   }
 
-  const room = profile.room || 1;
+  const myRoom = staff ? 2 : (profile.room || 1);
+  const room = myRoom;
+  const view = ['1', '2'].includes(String(searchParams?.room)) ? Number(searchParams.room) : myRoom;
+  const Tabs = () => (
+    <div className="roomtabs">
+      {[1, 2].map((r) => (
+        <a key={r} href={`/rooms?room=${r}`} className={view === r ? 'on' : ''}>
+          {!staff && r > myRoom && '🔒 '}{r === 1 ? 'الحسابات الصغيرة' : 'الحسابات الكبيرة'}
+          <span>{r === 1 ? 'أقل من 1,000$' : '1,000$ وأكثر'}</span>
+        </a>
+      ))}
+    </div>
+  );
 
-  // 2) verified → disclaimer for the room
-  const { data: consent } = await sb.from('consents').select('id').eq('user_id', profile.id).eq('room', room).eq('version', DISCLAIMER_VERSION).maybeSingle();
+  // 2) verified → disclaimer for the member's own room (staff skip it)
+  const { data: consent } = staff ? { data: true } : await sb.from('consents').select('id').eq('user_id', profile.id).eq('room', room).eq('version', DISCLAIMER_VERSION).maybeSingle();
   if (!consent) {
     return (
       <>
@@ -58,17 +73,58 @@ export default async function Rooms({ searchParams }) {
     );
   }
 
-  // 3) room signals
-  const { data: signals } = await sb.from('signals').select('*').contains('rooms', [room]).order('published_at', { ascending: false }).limit(30);
+  // 3) a room above the member's level → locked, with an upgrade request
+  if (!staff && view > myRoom) {
+    const { data: tz } = await sb.rpc('room_teaser', { p_room: view });
+    return (
+      <>
+        <TopBar profile={profile} />
+        <main className="wrap grid" style={{ maxWidth: 620 }}>
+          <Tabs />
+          <div className="card hl grid" style={{ gap: 10 }}>
+            <b style={{ fontSize: 18 }}>🔒 غرفة الحسابات الكبيرة · 1,000$ وأكثر</b>
+            <div className="muted" style={{ lineHeight: 1.8 }}>
+              هالغرفة لحسابات رصيدها 1,000$ أو أكثر. توصياتها فيها أهداف أبعد وإدارة صفقة مناسبة للحسابات الأكبر.
+              {profile.balance_usd != null && <> رصيدك المسجّل عنا: <b className="ltr" style={{ color: 'var(--text)' }}>${fmt(profile.balance_usd, 0)}</b>.</>}
+            </div>
+            {tz && <div className="row" style={{ gap: 16 }}>
+              <span>نزل فيها آخر 30 يوم: <b>{tz.last30}</b> توصية</span>
+              {tz.closed > 0 && <span>نسبة النجاح: <b>{fmt((100 * tz.wins) / tz.closed, 0)}%</b> من {tz.closed}</span>}
+            </div>}
+          </div>
+          {profile.upgrade_requested_at ? (
+            <div className="card grid" style={{ gap: 6 }}>
+              <b>طلب الترقية وصلنا ✅</b>
+              <div className="muted">رح نتأكد من رصيدك (<span className="ltr">${fmt(profile.upgrade_balance, 0)}</span>) وننقلك للغرفة الكبيرة خلال وقت قصير.</div>
+            </div>
+          ) : (
+            <form action={requestUpgrade} className="card grid">
+              <b>زِد رصيد حسابك لـ 1,000$ أو أكثر وادخل الغرفة</b>
+              <div className="muted">بعد ما تودع، اكتب رصيدك الحالي واضغط الزر، ومنحدّث غرفتك بعد ما نتأكد.</div>
+              <label>رصيد حسابك الحالي بالدولار
+                <input name="balance" type="number" min="1000" step="1" dir="ltr" inputMode="numeric" required placeholder="1000" />
+              </label>
+              <button className="btn">أودعت، انقلني للغرفة الكبيرة</button>
+            </form>
+          )}
+          <a className="btn ghost" href={wa('مرحبا، بدي أزيد رصيد حسابي وأنتقل لغرفة الحسابات الكبيرة.')} target="_blank" rel="noopener">عندك سؤال؟ راسلنا على واتساب</a>
+        </main>
+      </>
+    );
+  }
+
+  // 4) room signals
+  const { data: signals } = await sb.from('signals').select('*').contains('rooms', [view]).order('published_at', { ascending: false }).limit(30);
 
   return (
     <>
       <TopBar profile={profile} />
       <main className="wrap grid">
         <TelegramPrompt link={tgLink} />
+        <Tabs />
         <div className="card hl">
-          <div className="muted">غرفتك</div>
-          <b style={{ fontSize: 17 }}>{ROOM_AR[room]}</b>
+          <div className="muted">{staff ? 'عرض الفريق' : view === myRoom ? 'غرفتك' : 'عم تشوف'}</div>
+          <b style={{ fontSize: 17 }}>{ROOM_AR[view]}</b>
           {profile.balance_usd && <div className="muted" style={{ marginTop: 4 }}>الرصيد المسجّل: <span className="ltr">${fmt(profile.balance_usd, 0)}</span></div>}
         </div>
 
