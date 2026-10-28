@@ -28,6 +28,10 @@ export default function ActivationForm({ action, back, profile }) {
       <label>رقم حساب التداول (MT4 / MT5){!yes && ' — اختياري'}
         <input name="account" dir="ltr" inputMode="numeric" pattern="[0-9]{4,15}" title="أرقام بس" required={yes} defaultValue={profile?.broker_account || ''} />
       </label>
+      <label>{yes ? 'رصيد حسابك الحالي بالدولار' : 'رصيد حسابك الحالي بالدولار — اختياري'}
+        <input name="reported_balance" type="number" min="0" step="1" dir="ltr" inputMode="numeric" required={yes} placeholder="مثلاً 500" defaultValue={profile?.reported_balance ?? ''} />
+        <span className="muted" style={{ fontSize: 12 }}>منحدد غرفتك حسبه: أقل من 1,000$ غرفة الحسابات الصغيرة، 1,000$ وأكثر الغرفة الكبيرة.</span>
+      </label>
       <label>رقم واتساب مع المفتاح الدولي
         <input name="phone" type="tel" dir="ltr" placeholder="+971 50 123 4567" required defaultValue={profile?.phone || ''} autoComplete="tel" />
       </label>

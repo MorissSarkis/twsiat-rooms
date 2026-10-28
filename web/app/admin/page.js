@@ -15,7 +15,7 @@ export default async function Admin() {
   const canDecide = ['manager', 'admin'].includes(profile.role);
   const [{ data: pending }, { data: queue }, { data: recent }, { data: log }] = await Promise.all([
     sb.from('suggestions').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
-    sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at,phone,has_ib_account').eq('ib_verified', false).not('activation_requested_at', 'is', null).is('activation_rejected_at', null).order('activation_requested_at'),
+    sb.from('profiles').select('id,display_name,broker,broker_account,activation_requested_at,phone,has_ib_account,reported_balance').eq('ib_verified', false).not('activation_requested_at', 'is', null).is('activation_rejected_at', null).order('activation_requested_at'),
     sb.from('signals').select('*').eq('shadow', false).order('published_at', { ascending: false }).limit(20),
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
@@ -94,14 +94,14 @@ export default async function Admin() {
                       ? <span className="badge" style={{ background: 'var(--gold)' }}>بدّه مساعدة بنقل/فتح حساب</span>
                       : <span className="badge buy">بيقول حسابه تحت وكالتنا</span>}
                     {emails?.[c.id] && <div className="ltr muted" style={{ textAlign: 'right' }}>{emails[c.id]}</div>}
-                    <div className="muted">{c.broker || '—'} · <span className="ltr">{c.broker_account || '—'}</span> · {when(c.activation_requested_at)}</div>
+                    <div className="muted">{c.broker || '—'} · <span className="ltr">{c.broker_account || '—'}</span>{c.reported_balance != null && <> · بيقول رصيده <b className="ltr" style={{ color: 'var(--text)' }}>${c.reported_balance}</b> ({c.reported_balance >= 1000 ? 'غرفة 2' : 'غرفة 1'})</>} · {when(c.activation_requested_at)}</div>
                   </div>
                   {c.phone && <a className="btn ghost" href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener"><span className="ltr">{c.phone}</span> · واتساب</a>}
                 </div>
                 <div className="grid g2">
                   <form action={verifyClient} className="row">
                     <input type="hidden" name="id" value={c.id} />
-                    <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" />
+                    <input name="balance" type="number" placeholder="الرصيد $" required style={{ width: 130 }} dir="ltr" defaultValue={c.reported_balance ?? ''} />
                     <button className="btn">فعّل</button>
                   </form>
                   <form action={rejectActivation} className="row">

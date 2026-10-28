@@ -18,6 +18,10 @@ export async function submitActivation(formData) {
     p_has_ib: hasIb,
     p_phone: String(formData.get('phone') || ''),
   });
+  const rb = Number(String(formData.get('reported_balance') || '').replace(/[^0-9.]/g, ''));
+  if (!error && String(formData.get('reported_balance') || '').trim() !== '' && rb >= 0 && rb <= 1e8) {
+    await sb.from('profiles').update({ reported_balance: Math.round(rb) }).eq('id', user.id);
+  }
   revalidatePath('/alerts'); revalidatePath('/rooms'); revalidatePath('/home');
   if (error) {
     const key = Object.keys(ERR).find((k) => error.message.includes(k));
