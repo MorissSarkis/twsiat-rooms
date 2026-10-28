@@ -1,6 +1,7 @@
 import ActivationBox, { ACT_ERRORS } from '../activation/box';
 import TopBar from '../TopBar';
 import TelegramPrompt from '../TelegramPrompt';
+import PushPrompt from '../PushPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
 import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
@@ -55,7 +56,8 @@ export default async function Rooms({ searchParams }) {
       <>
         <TopBar profile={profile} />
         <main className="wrap grid" style={{ maxWidth: 620 }}>
-          <TelegramPrompt link={tgLink} />
+          <PushPrompt />
+        <TelegramPrompt link={tgLink} />
           <div className="card hl"><b>تم تفعيل حسابك ✅</b><div className="muted" style={{ marginTop: 4 }}>أهلاً فيك! خطوة أخيرة وبتدخل غرفتك.</div></div>
           <h1>{ROOM_AR[room]}</h1>
           <div className="card grid">
@@ -120,6 +122,7 @@ export default async function Rooms({ searchParams }) {
     <>
       <TopBar profile={profile} />
       <main className="wrap grid">
+        <PushPrompt />
         <TelegramPrompt link={tgLink} />
         <Tabs />
         <div className="card hl">

@@ -1,5 +1,6 @@
 import TopBar from '../TopBar';
 import TelegramPrompt from '../TelegramPrompt';
+import PushPrompt from '../PushPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { ROOM_AR } from '@/lib/format';
 import ActivationBox, { ACT_ERRORS } from '../activation/box';
@@ -89,6 +90,7 @@ export default async function Home({ searchParams }) {
           </a>
         )}
 
+        <PushPrompt />
         {verified ? <TelegramPrompt link={tgLink} /> : (
           <>
             <div id="activate" style={{ marginTop: 6, scrollMarginTop: 16 }}>
