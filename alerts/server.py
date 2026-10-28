@@ -254,7 +254,7 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
     @app.get("/{name}.png")
     def icon(name: str):
         p = os.path.join(WEB, f"{name}.png")
-        if name not in ("icon-192", "icon-512", "apple-touch-icon", "badge") or not os.path.exists(p):
+        if name not in ("icon-192", "icon-512", "icon-maskable-512", "apple-touch-icon", "badge") or not os.path.exists(p):
             raise HTTPException(404)
         return FileResponse(p, media_type="image/png")
 
