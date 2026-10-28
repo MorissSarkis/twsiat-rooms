@@ -49,7 +49,7 @@ export default function PushPrompt() {
       const reg = await navigator.serviceWorker.ready;
       const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
       if (!(await save(sub))) { setMsg('ما قدرنا نحفظ الاشتراك، جرّب كمان مرة.'); setSt('error'); return; }
-      reg.showNotification('تم تفعيل الإشعارات ✅', { body: 'رح توصلك توصيات غرفتك وتحديثاتها هون أول بأول.', icon: '/icon-192.png', badge: '/badge.png', dir: 'rtl', lang: 'ar' });
+      reg.showNotification('تم تفعيل الإشعارات ✅', { body: 'رح توصلك توصيات غرفتك وتحديثاتها هون أول بأول.', icon: '/icon-192.png?v=2', badge: '/badge.png?v=2', dir: 'rtl', lang: 'ar' });
       setSt('justOn');
     } catch { setMsg('صار خطأ. جرّب من Chrome على أندرويد أو Safari على آيفون.'); setSt('error'); }
   }
