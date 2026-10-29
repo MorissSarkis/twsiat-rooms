@@ -194,8 +194,23 @@ def test_member_code_signs_in_once():
     c, r = member(app, "code1")
     assert r.status_code == 302 and r.headers["location"] == "/"
     assert c.get("/api/state").json()["me"]["reason"] == "ib"
-    c2, r2 = member(app, "code1")                    # used already
-    assert r2.status_code == 400 and c2.get("/api/state").status_code == 401
+    c2, r2 = member(app, "code1")                    # same link opened again right away (browser -> installed app)
+    assert r2.status_code == 302 and c2.get("/api/state").json()["me"]["reason"] == "ib"
+    import time as _t
+    real = _t.time
+    try:
+        _t.time = lambda: real() + 300               # after 2 minutes the link is dead
+        c3, r3 = member(app, "code1")
+        assert r3.status_code == 400 and c3.get("/api/state").status_code == 401
+    finally:
+        _t.time = real
+
+
+def test_dead_link_on_a_signed_in_phone_just_opens_the_app():
+    _, _, _, app = make_members()
+    c, _ = member(app, "code1")
+    r = c.get("/auth?code=nope", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == "/"
 
 
 def test_no_access_goes_to_expired_page():

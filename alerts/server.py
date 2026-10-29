@@ -259,6 +259,9 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
         return FileResponse(p, media_type="image/png")
 
     # ---------- auth ----------
+    used_codes = {}                # code -> (info, time): a link opened twice within 2 minutes still works
+    CODE_REPLAY_S = 120
+
     @app.get("/auth")
     def auth(req: Request, code: str = ""):
         """members site -> one-time code -> signed in here"""
@@ -267,12 +270,24 @@ def create_app(service, hub: PushHub, password: str, data_dir: str, directory=No
             return RedirectResponse("/login", 302)
         if sessions.too_many_fails(ip):
             return page("محاولات كثيرة", "جرّب بعد ربع ساعة.", members, "رجوع", status=429)
+        recent = used_codes.get(code)
+        if recent and time.time() - recent[1] < CODE_REPLAY_S:
+            info = recent[0]       # same link opened twice (phone hands the link from the browser to the installed app)
+        else:
+            info = None
         try:
-            info = directory.redeem(code)
+            if info is None:
+                info = directory.redeem(code)
+                if info:
+                    for k in [k for k, v in used_codes.items() if time.time() - v[1] > CODE_REPLAY_S]:
+                        used_codes.pop(k, None)
+                    used_codes[code] = (info, time.time())
         except Exception as e:
             log.error("code redeem failed: %s", e)
             return page("ما قدرنا نكمّل الدخول", "صار خطأ بالاتصال. جرّب مرة ثانية بعد شوي.", members, "حاول مرة ثانية",
                         status=503)
+        if not info and who(req):  # an old or used link, but this phone is already signed in
+            return RedirectResponse("/", 302)
         if not info:
             sessions.fail(ip)
             return page("الرابط انتهى", "رابط الدخول بيشتغل مرة وحدة ولمدة دقيقتين. ارجع لصفحة التنبيهات واضغط «افتح» مرة ثانية.",
