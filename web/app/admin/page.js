@@ -1,13 +1,13 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
 import { symName, fmt, STATE_AR, when, px } from '@/lib/format';
-import { setRoom, approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts, rejectActivation } from './actions';
+import { updateSignal, setRoom, approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts, rejectActivation } from './actions';
 
 export const dynamic = 'force-dynamic';
 
 const RULE_AR = { daily_trend: 'الاتجاه اليومي', h1_trend: 'اتجاه الساعة', entry_at_pivot: 'الدخول على البيفوت', stop_atr: 'حجم الستوب', stop_size: 'حجم الستوب', tp1_distance: 'مسافة الهدف 1', levels_order: 'ترتيب المستويات', news: 'الأخبار', analyst_note: 'ملاحظة المحلل' };
 
-export default async function Admin() {
+export default async function Admin({ searchParams }) {
   const { sb, profile } = await currentUser();
   if (!profile || !['analyst', 'manager', 'admin'].includes(profile.role)) {
     return (<><TopBar profile={profile} /><main className="wrap"><div className="card">هالصفحة للفريق بس.</div></main></>);
@@ -20,6 +20,9 @@ export default async function Admin() {
     sb.from('engine_log').select('*').order('t', { ascending: false }).limit(20),
   ]);
   const { data: shadow } = await sb.rpc('shadow_stats');
+  const { data: liveSigs } = canDecide
+    ? await sb.from('signals').select('*').eq('shadow', false).in('state', ['waiting', 'open', 'tp1']).order('published_at', { ascending: false })
+    : { data: [] };
   const { data: upgrades } = canDecide
     ? await sb.from('profiles').select('id,display_name,broker,broker_account,balance_usd,upgrade_balance,upgrade_requested_at,phone').not('upgrade_requested_at', 'is', null).order('upgrade_requested_at')
     : { data: [] };
@@ -306,6 +309,45 @@ export default async function Admin() {
                     <button className="btn ghost">رشّح للغرف (بتمر على الفحص والموافقة)</button>
                   </form>
                 )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {canDecide && (
+          <>
+            <h2 id="live">الصفقات الشغّالة · تحديث أو تعليق ({liveSigs?.length || 0})</h2>
+            {searchParams?.uerr && <div className="err">{searchParams.uerr}</div>}
+            {searchParams?.uok && <div className="note">✅ انبعت التحديث للعملاء (الغرفة، تيليجرام، وإشعارات الموبايل).</div>}
+            {(!liveSigs || liveSigs.length === 0) && <div className="card muted">ما في صفقات شغّالة هلق.</div>}
+            {liveSigs?.map((s) => (
+              <div key={s.id} className="card grid" style={{ gap: 10 }}>
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <div className="row">
+                    <b>{symName(s.symbol)}</b>
+                    <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
+                    <span className="muted">{STATE_AR[s.state] || s.state} · غرفة {(s.rooms || []).join(' و ')}</span>
+                  </div>
+                  <span className="muted ltr">{when(s.published_at)}</span>
+                </div>
+                <div className="muted">الدخول <b className="ltr" style={{ color: 'var(--text)' }}>{px(s.symbol, s.entry)}</b>
+                  {s.orig_stop != null && Number(s.orig_stop) !== Number(s.stop_loss) && <> · الستوب الأصلي <span className="ltr">{px(s.symbol, s.orig_stop)}</span></>}</div>
+                <form action={updateSignal} className="grid" style={{ gap: 8 }}>
+                  <input type="hidden" name="id" value={s.id} />
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
+                    <label>وقف الخسارة<input name="sl" type="number" step="any" dir="ltr" defaultValue={s.stop_loss} /></label>
+                    <label>الهدف 1<input name="tp1" type="number" step="any" dir="ltr" defaultValue={s.tp1} /></label>
+                    <label>الهدف 2<input name="tp2" type="number" step="any" dir="ltr" defaultValue={s.tp2 ?? ''} /></label>
+                  </div>
+                  <label>تعليق للعملاء (اختياري)<textarea name="note" placeholder="مثلاً: انقلوا الستوب لنقطة الدخول، في خبر قوي الساعة 3" /></label>
+                  <button className="btn">أرسل التحديث للعملاء</button>
+                </form>
+                <form action={updateSignal} className="row" style={{ gap: 8 }}>
+                  <input type="hidden" name="id" value={s.id} /><input type="hidden" name="close" value="1" />
+                  <input name="note" placeholder="سبب الإغلاق (اختياري)" style={{ flex: 1, minWidth: 160 }} />
+                  <label style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><input type="checkbox" name="sure" value="1" style={{ width: 18, height: 18 }} /> متأكد</label>
+                  <button className="btn red">{s.state === 'waiting' ? 'ألغِ الأمر المعلّق' : 'سكّر الصفقة هلق بسعر السوق'}</button>
+                </form>
               </div>
             ))}
           </>

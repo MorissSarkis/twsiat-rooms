@@ -1,5 +1,6 @@
 'use server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 
 async function staff() {
@@ -98,4 +99,18 @@ export async function setRoom(formData) {
   await sb.rpc('admin_set_room', { p_user: String(formData.get('id')), p_room: Number(formData.get('room')),
     p_balance: bal === null || bal === '' ? null : Number(bal) });
   revalidatePath('/admin'); revalidatePath('/admin/members');
+}
+
+// update a live signal: move stop / targets, add a comment, or close it now
+export async function updateSignal(formData) {
+  const { sb } = await staff();
+  const num = (k) => { const v = String(formData.get(k) || '').trim(); return v === '' ? null : Number(v); };
+  const close = formData.get('close') === '1';
+  if (close && formData.get('sure') !== '1') redirect('/admin?uerr=' + encodeURIComponent('علّم على «متأكد» لتسكّر الصفقة') + '#live');
+  const { error } = await sb.rpc('staff_update_signal', {
+    p_id: Number(formData.get('id')), p_sl: close ? null : num('sl'), p_tp1: close ? null : num('tp1'), p_tp2: close ? null : num('tp2'),
+    p_note: String(formData.get('note') || ''), p_close: close,
+  });
+  revalidatePath('/admin'); revalidatePath('/rooms');
+  redirect(error ? '/admin?uerr=' + encodeURIComponent(error.message) + '#live' : '/admin?uok=1#live');
 }

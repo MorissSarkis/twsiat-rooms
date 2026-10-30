@@ -117,6 +117,10 @@ export default async function Rooms({ searchParams }) {
 
   // 4) room signals
   const { data: signals } = await sb.from('signals').select('*').contains('rooms', [view]).order('published_at', { ascending: false }).limit(30);
+  const ids = (signals || []).map((x) => x.id);
+  const { data: ups } = ids.length ? await sb.from('signal_updates').select('*').in('signal_id', ids).order('created_at') : { data: [] };
+  const upsOf = (id) => (ups || []).filter((u) => u.signal_id === id);
+  const fresh = (t) => Date.now() - new Date(t).getTime() < 24 * 3600e3;
 
   return (
     <>
@@ -136,7 +140,7 @@ export default async function Rooms({ searchParams }) {
         {signals?.map((s) => {
           const lot = lotFor(profile.balance_usd, 1, s.risk_usd_001);
           return (
-            <div key={s.id} className="card grid">
+            <div key={s.id} id={`s${s.id}`} className={`card grid${upsOf(s.id).some((u) => fresh(u.created_at)) ? ' has-upd' : ''}`}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <div className="row">
                   <b>{symName(s.symbol)}</b>
@@ -148,7 +152,8 @@ export default async function Rooms({ searchParams }) {
               </div>
               <div className="kv">
                 <div><span className="muted">الدخول</span><b>{px(s.symbol, s.entry)}</b></div>
-                <div><span className="muted">وقف الخسارة</span><b className="bad">{px(s.symbol, s.stop_loss)}</b></div>
+                <div><span className="muted">وقف الخسارة{s.orig_stop != null && Number(s.orig_stop) !== Number(s.stop_loss) ? ' (معدّل)' : ''}</span><b className="bad">{px(s.symbol, s.stop_loss)}</b>
+                  {s.orig_stop != null && Number(s.orig_stop) !== Number(s.stop_loss) && <s className="muted ltr" style={{ fontSize: 12 }}>{px(s.symbol, s.orig_stop)}</s>}</div>
                 <div><span className="muted">الهدف 1</span><b className="ok">{px(s.symbol, s.tp1)}</b></div>
                 <div><span className="muted">الهدف 2</span><b className="ok">{px(s.symbol, s.tp2)}</b></div>
               </div>
@@ -162,6 +167,20 @@ export default async function Rooms({ searchParams }) {
                 <span className="muted">الإدارة: سكّر نص الصفقة عند الهدف 1 وانقل الستوب للدخول، أو اكتفِ بالهدف 1</span>
                 <span className={s.state === 'sl' ? 'bad' : s.state.startsWith('tp') ? 'ok' : 'muted'}>{STATE_AR[s.state] || s.state}</span>
               </div>
+              {upsOf(s.id).length > 0 && (
+                <div className="upds">
+                  {upsOf(s.id).map((u) => (
+                    <div key={u.id} className={`upd upd-${u.kind}`}>
+                      <div className="upd-h">
+                        <b>{u.kind === 'close' ? '⏹ قرار إغلاق' : u.kind === 'levels' ? '✏️ تحديث على الصفقة' : '💬 تعليق المحلل'}</b>
+                        {fresh(u.created_at) && <span className="badge" style={{ background: 'var(--gold)' }}>جديد</span>}
+                        <span className="muted ltr" style={{ marginInlineStart: 'auto' }}>{new Date(u.created_at).toLocaleString('en-GB', { timeZone: 'Asia/Riyadh', dateStyle: 'short', timeStyle: 'short' })}</span>
+                      </div>
+                      <div style={{ whiteSpace: 'pre-line', lineHeight: 1.8 }}>{u.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
