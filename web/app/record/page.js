@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { fmt, symName, STATE_AR, when } from '@/lib/format';
+import { fmt, symName, STATE_AR, when, px } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'سجل الأداء — موقع توصيات', description: 'كل توصية نشرناها ونتيجتها الحقيقية، بدون حذف ولا تعديل.' };
@@ -70,8 +70,8 @@ export default async function Record() {
                   <td className="ltr">{when(t.published_at)}</td>
                   <td>{symName(t.symbol)}</td>
                   <td><span className={`badge ${t.side === 'BUY' ? 'buy' : 'sell'}`}>{t.side === 'BUY' ? 'شراء' : 'بيع'}</span></td>
-                  <td className="ltr">{t.entry}</td><td className="ltr">{t.stop_loss}</td>
-                  <td className="ltr">{t.tp1}</td><td className="ltr">{t.tp2 ?? '—'}</td>
+                  <td className="ltr">{px(t.symbol, t.entry)}</td><td className="ltr">{px(t.symbol, t.stop_loss)}</td>
+                  <td className="ltr">{px(t.symbol, t.tp1)}</td><td className="ltr">{px(t.symbol, t.tp2)}</td>
                   <td>{STATE_AR[t.state] || t.state}</td>
                   <td className={Number(t.result_r_partial) >= 0 ? 'ok ltr' : 'bad ltr'}>{R(t.result_r_partial)}</td>
                   <td className={Number(t.result_r_tp1only) >= 0 ? 'ok ltr' : 'bad ltr'}>{R(t.result_r_tp1only)}</td>

@@ -1,6 +1,6 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { symName, fmt, STATE_AR, when } from '@/lib/format';
+import { symName, fmt, STATE_AR, when, px } from '@/lib/format';
 import { setRoom, approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts, rejectActivation } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -238,15 +238,15 @@ export default async function Admin() {
               <b className={s.check_passed ? 'ok' : 'bad'}>{s.check_passed ? 'عدّت الفحص ✓' : 'ما عدّت الفحص ✗'}</b>
             </div>
             <div className="kv">
-              <div><span className="muted">الدخول</span><b>{fmt(s.entry)}</b></div>
-              <div><span className="muted">الستوب</span><b className="bad">{fmt(s.stop_loss)}</b></div>
-              <div><span className="muted">الهدف 1</span><b className="ok">{fmt(s.tp1)}</b></div>
-              <div><span className="muted">الهدف 2</span><b className="ok">{fmt(s.tp2)}</b></div>
+              <div><span className="muted">الدخول</span><b>{px(s.symbol, s.entry)}</b></div>
+              <div><span className="muted">الستوب</span><b className="bad">{px(s.symbol, s.stop_loss)}</b></div>
+              <div><span className="muted">الهدف 1</span><b className="ok">{px(s.symbol, s.tp1)}</b></div>
+              <div><span className="muted">الهدف 2</span><b className="ok">{px(s.symbol, s.tp2)}</b></div>
             </div>
             {s.hist_sample && (
               <div className="note">
                 تاريخياً، الإعداد هاد: <b>{fmt(s.hist_win_rate, 0)}%</b> نجاح، متوسط <b className="ltr">{s.hist_avg_r > 0 ? '+' : ''}{fmt(s.hist_avg_r, 2)}R</b> على <b>{s.hist_sample}</b> صفقة.
-                المخاطرة <span className="ltr">${fmt(s.risk_usd_001, 1)}</span> لكل 0.01 لوت.
+                {s.risk_usd_001 ? <>المخاطرة <span className="ltr">${fmt(s.risk_usd_001, 2)}</span> لكل 0.01 لوت.</> : 'المخاطرة بالدولار مش محسوبة لهالأداة (حجم العقد بيختلف حسب الشركة).'}
               </div>
             )}
             <table><tbody>
@@ -319,7 +319,7 @@ export default async function Admin() {
               {recent?.map((s) => (
                 <tr key={s.id}>
                   <td className="ltr">{new Date(s.published_at).toISOString().slice(0, 16).replace('T', ' ')}</td>
-                  <td>{s.symbol}</td><td>{s.side === 'BUY' ? 'شراء' : 'بيع'}</td><td className="ltr">{fmt(s.entry)}</td>
+                  <td>{s.symbol}</td><td>{s.side === 'BUY' ? 'شراء' : 'بيع'}</td><td className="ltr">{px(s.symbol, s.entry)}</td>
                   <td>{STATE_AR[s.state] || s.state}</td>
                   <td className="ltr">{s.result_r_tp1only ?? '—'}</td><td className="ltr">{s.result_r_partial ?? '—'}</td>
                 </tr>

@@ -4,7 +4,7 @@ import TelegramPrompt from '../TelegramPrompt';
 import PushPrompt from '../PushPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
-import { fmt, lotFor, STATE_AR, ROOM_AR, symName } from '@/lib/format';
+import { fmt, lotFor, STATE_AR, ROOM_AR, symName, px } from '@/lib/format';
 import { acceptDisclaimer, requestUpgrade } from './actions';
 import { wa } from '@/lib/brand';
 
@@ -147,13 +147,13 @@ export default async function Rooms({ searchParams }) {
                 <span className="muted ltr">{new Date(s.published_at).toLocaleString('en-GB', { timeZone: 'Asia/Riyadh', dateStyle: 'short', timeStyle: 'short' })}</span>
               </div>
               <div className="kv">
-                <div><span className="muted">الدخول</span><b>{fmt(s.entry)}</b></div>
-                <div><span className="muted">وقف الخسارة</span><b className="bad">{fmt(s.stop_loss)}</b></div>
-                <div><span className="muted">الهدف 1</span><b className="ok">{fmt(s.tp1)}</b></div>
-                <div><span className="muted">الهدف 2</span><b className="ok">{fmt(s.tp2)}</b></div>
+                <div><span className="muted">الدخول</span><b>{px(s.symbol, s.entry)}</b></div>
+                <div><span className="muted">وقف الخسارة</span><b className="bad">{px(s.symbol, s.stop_loss)}</b></div>
+                <div><span className="muted">الهدف 1</span><b className="ok">{px(s.symbol, s.tp1)}</b></div>
+                <div><span className="muted">الهدف 2</span><b className="ok">{px(s.symbol, s.tp2)}</b></div>
               </div>
               <div className="row muted" style={{ justifyContent: 'space-between' }}>
-                <span>المخاطرة: <span className="ltr">${fmt(s.risk_usd_001, 1)}</span> لكل 0.01 لوت</span>
+                <span>{s.risk_usd_001 ? <>المخاطرة: <span className="ltr">${fmt(s.risk_usd_001, 2)}</span> لكل 0.01 لوت</> : 'حجم العقد بيختلف حسب شركتك: احسب اللوت من منصتك على مسافة الستوب'}</span>
                 <span style={{ color: 'var(--gold)' }}>
                   {lot == null ? '' : lot >= 0.01 ? `لحسابك بمخاطرة 1%: ${lot.toFixed(2)} لوت` : 'المخاطرة أكبر من 1% من حسابك حتى بأصغر لوت — استخدم حساب سنت'}
                 </span>
