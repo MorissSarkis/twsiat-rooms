@@ -236,7 +236,7 @@ export default async function Admin({ searchParams }) {
               <div className="row">
                 <b>{symName(s.symbol)}</b>
                 <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
-                <span className="muted">{s.source === 'engine' ? 'من السيستم' : s.source === 'community' ? <>فكرة من العضو <span className="ltr">@{s.credit_username}</span></> : 'من المحلل'}</span>
+                <span className="muted">{s.source === 'engine' ? 'من السيستم' : s.source === 'engine2' ? 'من السيستم · v2 لحظي (وافق خلال 30 دقيقة)' : s.source === 'community' ? <>فكرة من العضو <span className="ltr">@{s.credit_username}</span></> : 'من المحلل'}</span>
               </div>
               <b className={s.check_passed ? 'ok' : 'bad'}>{s.check_passed ? 'عدّت الفحص ✓' : 'ما عدّت الفحص ✗'}</b>
             </div>
