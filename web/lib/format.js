@@ -8,7 +8,17 @@ export const STATE_AR = { waiting: 'بانتظار التفعيل', open: 'مف�
 export const ROOM_AR = { 1: 'غرفة الحسابات الصغيرة · أقل من 1,000$', 2: 'غرفة الحسابات الكبيرة · 1,000$ وأكثر' };
 export const SYMBOL_AR = { XAUUSD: 'الذهب', XAGUSD: 'الفضة', USOIL: 'نفط WTI', UKOIL: 'نفط برنت', XNGUSD: 'الغاز الطبيعي', US30: 'داو جونز', USTEC: 'ناسداك 100', US500: 'S&P 500', DE30: 'داكس', UK100: 'فوتسي 100', JP225: 'نيكاي 225', EURUSD: 'يورو / دولار', GBPUSD: 'باوند / دولار', USDJPY: 'دولار / ين', USDCHF: 'دولار / فرنك', AUDUSD: 'أسترالي / دولار', USDCAD: 'دولار / كندي', NZDUSD: 'نيوزلندي / دولار', BTCUSD: 'بيتكوين', ETHUSD: 'إيثيريوم' };
 // once TP1 is reached the signal counts as a win, whatever happens after it (TP2 still shows as TP2)
-export const stateLabel = (s) => (s.tp1_at && ['be', 'sl', 'closed'].includes(s.state) ? STATE_AR.tp1 : STATE_AR[s.state] || s.state);
+export const stateLabel = (s) => {
+  if (s.tp1_at && ['be', 'sl', 'closed'].includes(s.state)) return STATE_AR.tp1;
+  if (s.state === 'closed' && s.closed_reason === 'manual') {
+    const r = Number(s.result_r_partial);
+    return r > 0 ? 'أُغلقت يدوياً على ربح ✅' : r < 0 ? 'أُغلقت يدوياً على خسارة' : 'أُغلقت يدوياً';
+  }
+  return STATE_AR[s.state] || s.state;
+};
+// green for TP / manual close in profit, red for stop / manual close in loss
+export const stateClass = (s) => (s.tp1_at || s.state.startsWith('tp') || (s.state === 'closed' && Number(s.result_r_partial) > 0) ? 'ok'
+  : s.state === 'sl' || (s.state === 'closed' && Number(s.result_r_partial) < 0) ? 'bad' : 'muted');
 export const symName = (s) => SYMBOL_AR[s] || s;
 // price decimals per instrument (same as the broker shows)
 export const DIGITS = { XAUUSD: 2, XAGUSD: 3, USOIL: 3, UKOIL: 3, XNGUSD: 3, US30: 1, USTEC: 1, US500: 1, DE30: 1, UK100: 1, JP225: 0,

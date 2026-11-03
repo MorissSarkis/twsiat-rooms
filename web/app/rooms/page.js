@@ -4,7 +4,7 @@ import TelegramPrompt from '../TelegramPrompt';
 import PushPrompt from '../PushPrompt';
 import { currentUser } from '@/lib/supabase-server';
 import { DISCLAIMER, DISCLAIMER_VERSION } from '@/lib/disclaimer';
-import { fmt, lotFor, STATE_AR, ROOM_AR, symName, px, stateLabel } from '@/lib/format';
+import { fmt, lotFor, STATE_AR, ROOM_AR, symName, px, stateLabel, stateClass } from '@/lib/format';
 import { acceptDisclaimer, requestUpgrade } from './actions';
 import { wa } from '@/lib/brand';
 
@@ -165,7 +165,7 @@ export default async function Rooms({ searchParams }) {
               </div>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">الإدارة: سكّر نص الصفقة عند الهدف 1 وانقل الستوب للدخول، أو اكتفِ بالهدف 1</span>
-                <span className={s.tp1_at || s.state.startsWith('tp') ? 'ok' : s.state === 'sl' ? 'bad' : 'muted'}>{stateLabel(s)}</span>
+                <span className={stateClass(s)}>{stateLabel(s)}</span>
               </div>
               {upsOf(s.id).length > 0 && (
                 <div className="upds">
