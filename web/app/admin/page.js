@@ -1,6 +1,6 @@
 import TopBar from '../TopBar';
 import { currentUser } from '@/lib/supabase-server';
-import { symName, fmt, STATE_AR, when, px } from '@/lib/format';
+import { symName, fmt, STATE_AR, when, px, stateLabel } from '@/lib/format';
 import { updateSignal, setRoom, approveSuggestion, rejectSuggestion, verifyClient, promoteCommunity, approvePayment, rejectPayment, grantAlerts, rejectActivation } from './actions';
 
 export const dynamic = 'force-dynamic';
@@ -216,7 +216,7 @@ export default async function Admin({ searchParams }) {
                         <td className="ltr">{new Date(r.published_at).toISOString().slice(0, 10)}</td>
                         <td>{r.side === 'BUY' ? 'شراء' : 'بيع'}</td>
                         <td className="ltr">{r.entry}</td><td className="ltr">{r.stop_loss}</td>
-                        <td>{STATE_AR[r.state] || r.state}</td>
+                        <td>{stateLabel(r)}</td>
                         <td className="ltr">{r.result_r_partial == null ? '—' : fmt(r.result_r_partial, 2)}</td>
                       </tr>))}
                     </tbody>
@@ -326,7 +326,7 @@ export default async function Admin({ searchParams }) {
                   <div className="row">
                     <b>{symName(s.symbol)}</b>
                     <span className={`badge ${s.side === 'BUY' ? 'buy' : 'sell'}`}>{s.side === 'BUY' ? 'شراء' : 'بيع'}</span>
-                    <span className="muted">{STATE_AR[s.state] || s.state} · غرفة {(s.rooms || []).join(' و ')}</span>
+                    <span className="muted">{stateLabel(s)} · غرفة {(s.rooms || []).join(' و ')}</span>
                   </div>
                   <span className="muted ltr">{when(s.published_at)}</span>
                 </div>
@@ -362,7 +362,7 @@ export default async function Admin({ searchParams }) {
                 <tr key={s.id}>
                   <td className="ltr">{new Date(s.published_at).toISOString().slice(0, 16).replace('T', ' ')}</td>
                   <td>{s.symbol}</td><td>{s.side === 'BUY' ? 'شراء' : 'بيع'}</td><td className="ltr">{px(s.symbol, s.entry)}</td>
-                  <td>{STATE_AR[s.state] || s.state}</td>
+                  <td>{stateLabel(s)}</td>
                   <td className="ltr">{s.result_r_tp1only ?? '—'}</td><td className="ltr">{s.result_r_partial ?? '—'}</td>
                 </tr>
               ))}

@@ -4,9 +4,11 @@ export function lotFor(balance, riskPct, riskUsd001) {
   const lots = Math.floor(((balance * riskPct) / 100 / riskUsd001) * 0.01 * 100) / 100;
   return lots;
 }
-export const STATE_AR = { waiting: 'بانتظار التفعيل', open: 'مفتوحة', tp1: 'تحقق الهدف 1 · الستوب للدخول', tp2: 'تحقق الهدف 2', sl: 'ستوب لوس', be: 'خرجت على الدخول', expired: 'انتهت بدون تفعيل', closed: 'مغلقة' };
+export const STATE_AR = { waiting: 'بانتظار التفعيل', open: 'مفتوحة', tp1: 'تحقق الهدف 1 ✅', tp2: 'تحقق الهدف 2', sl: 'ستوب لوس', be: 'خرجت على الدخول', expired: 'انتهت بدون تفعيل', closed: 'مغلقة' };
 export const ROOM_AR = { 1: 'غرفة الحسابات الصغيرة · أقل من 1,000$', 2: 'غرفة الحسابات الكبيرة · 1,000$ وأكثر' };
 export const SYMBOL_AR = { XAUUSD: 'الذهب', XAGUSD: 'الفضة', USOIL: 'نفط WTI', UKOIL: 'نفط برنت', XNGUSD: 'الغاز الطبيعي', US30: 'داو جونز', USTEC: 'ناسداك 100', US500: 'S&P 500', DE30: 'داكس', UK100: 'فوتسي 100', JP225: 'نيكاي 225', EURUSD: 'يورو / دولار', GBPUSD: 'باوند / دولار', USDJPY: 'دولار / ين', USDCHF: 'دولار / فرنك', AUDUSD: 'أسترالي / دولار', USDCAD: 'دولار / كندي', NZDUSD: 'نيوزلندي / دولار', BTCUSD: 'بيتكوين', ETHUSD: 'إيثيريوم' };
+// once TP1 is reached the signal counts as a win, whatever happens after it (TP2 still shows as TP2)
+export const stateLabel = (s) => (s.tp1_at && ['be', 'sl', 'closed'].includes(s.state) ? STATE_AR.tp1 : STATE_AR[s.state] || s.state);
 export const symName = (s) => SYMBOL_AR[s] || s;
 // price decimals per instrument (same as the broker shows)
 export const DIGITS = { XAUUSD: 2, XAGUSD: 3, USOIL: 3, UKOIL: 3, XNGUSD: 3, US30: 1, USTEC: 1, US500: 1, DE30: 1, UK100: 1, JP225: 0,
