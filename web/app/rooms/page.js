@@ -156,6 +156,7 @@ export default async function Rooms({ searchParams }) {
                   {s.orig_stop != null && Number(s.orig_stop) !== Number(s.stop_loss) && <s className="muted ltr" style={{ fontSize: 12 }}>{px(s.symbol, s.orig_stop)}</s>}</div>
                 <div><span className="muted">الهدف 1</span><b className="ok">{px(s.symbol, s.tp1)}</b></div>
                 <div><span className="muted">الهدف 2</span><b className="ok">{px(s.symbol, s.tp2)}</b></div>
+                {s.tp3 != null && <div><span className="muted">الهدف 3</span><b className="ok">{px(s.symbol, s.tp3)}</b></div>}
               </div>
               <div className="row muted" style={{ justifyContent: 'space-between' }}>
                 <span>{s.risk_usd_001 ? <>المخاطرة: <span className="ltr">${fmt(s.risk_usd_001, 2)}</span> لكل 0.01 لوت</> : 'حجم العقد بيختلف حسب شركتك: احسب اللوت من منصتك على مسافة الستوب'}</span>

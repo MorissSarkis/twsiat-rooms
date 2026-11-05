@@ -14,6 +14,12 @@ export async function submitSignal(prev, formData) {
     p_valid_hours: num('hours') || 12, p_note: String(formData.get('note') || ''),
   });
   if (error) return { error: 'ما قدرنا نحفظ التوصية: ' + error.message };
+  const tp3 = num('tp3');
+  if (tp3 !== null) {
+    const tp2 = num('tp2');
+    if (tp2 === null || (side === 'BUY' ? tp3 <= tp2 : tp3 >= tp2)) return { error: 'الهدف 3 لازم يكون أبعد من الهدف 2 (ولازم تحط هدف 2). التوصية انحفظت بدون هدف 3، صلّحها من الإدارة.' };
+    await sb.from('suggestions').update({ tp3 }).eq('id', id);
+  }
 
   if (formData.get('publish') === '1') {
     const { data: { user } } = await sb.auth.getUser();
@@ -27,7 +33,7 @@ export async function submitSignal(prev, formData) {
     await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: 'نشر مباشر من مدير الحساب' }).eq('id', id);
     const { error: e2 } = await sb.from('signals').insert({
       suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
-      entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at,
+      entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at,
     });
     if (e2) return { error: 'ما قدرنا ننشر: ' + e2.message };
   }

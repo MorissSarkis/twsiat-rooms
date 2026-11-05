@@ -29,6 +29,7 @@ export default function NewSignalForm({ canPublish, symbols }) {
           <label>وقف الخسارة<input name="stop" type="number" step="any" required dir="ltr" /></label>
           <label>الهدف 1<input name="tp1" type="number" step="any" required dir="ltr" /></label>
           <label>الهدف 2<input name="tp2" type="number" step="any" dir="ltr" /></label>
+          <label>الهدف 3 (اختياري)<input name="tp3" type="number" step="any" dir="ltr" /></label>
         </div>
         <label>ملاحظة المحلل (اختياري)<textarea name="note" /></label>
         {state?.error && <div className="err">{state.error}</div>}

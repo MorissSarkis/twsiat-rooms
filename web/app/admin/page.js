@@ -21,7 +21,7 @@ export default async function Admin({ searchParams }) {
   ]);
   const { data: shadow } = await sb.rpc('shadow_stats');
   const { data: liveSigs } = canDecide
-    ? await sb.from('signals').select('*').eq('shadow', false).in('state', ['waiting', 'open', 'tp1']).order('published_at', { ascending: false })
+    ? await sb.from('signals').select('*').eq('shadow', false).or('state.in.(waiting,open,tp1),and(state.eq.tp2,closed_at.is.null)').order('published_at', { ascending: false })
     : { data: [] };
   const { data: upgrades } = canDecide
     ? await sb.from('profiles').select('id,display_name,broker,broker_account,balance_usd,upgrade_balance,upgrade_requested_at,phone').not('upgrade_requested_at', 'is', null).order('upgrade_requested_at')
@@ -245,6 +245,7 @@ export default async function Admin({ searchParams }) {
               <div><span className="muted">الستوب</span><b className="bad">{px(s.symbol, s.stop_loss)}</b></div>
               <div><span className="muted">الهدف 1</span><b className="ok">{px(s.symbol, s.tp1)}</b></div>
               <div><span className="muted">الهدف 2</span><b className="ok">{px(s.symbol, s.tp2)}</b></div>
+              {s.tp3 != null && <div><span className="muted">الهدف 3</span><b className="ok">{px(s.symbol, s.tp3)}</b></div>}
             </div>
             {s.hist_sample && (
               <div className="note">
@@ -334,10 +335,11 @@ export default async function Admin({ searchParams }) {
                   {s.orig_stop != null && Number(s.orig_stop) !== Number(s.stop_loss) && <> · الستوب الأصلي <span className="ltr">{px(s.symbol, s.orig_stop)}</span></>}</div>
                 <form action={updateSignal} className="grid" style={{ gap: 8 }}>
                   <input type="hidden" name="id" value={s.id} />
-                  <div className="grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8 }}>
                     <label>وقف الخسارة<input name="sl" type="number" step="any" dir="ltr" defaultValue={s.stop_loss} /></label>
                     <label>الهدف 1<input name="tp1" type="number" step="any" dir="ltr" defaultValue={s.tp1} /></label>
                     <label>الهدف 2<input name="tp2" type="number" step="any" dir="ltr" defaultValue={s.tp2 ?? ''} /></label>
+                    <label>الهدف 3 (اختياري)<input name="tp3" type="number" step="any" dir="ltr" defaultValue={s.tp3 ?? ''} /></label>
                   </div>
                   <label>تعليق للعملاء (اختياري)<textarea name="note" placeholder="مثلاً: انقلوا الستوب لنقطة الدخول، في خبر قوي الساعة 3" /></label>
                   <button className="btn">أرسل التحديث للعملاء</button>

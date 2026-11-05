@@ -22,7 +22,7 @@ export async function approveSuggestion(formData) {
   await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: String(formData.get('note') || '') }).eq('id', id);
   await sb.from('signals').insert({
     suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
-    entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at, credit_username: s.credit_username,
+    entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at, credit_username: s.credit_username,
   });
   revalidatePath('/admin');
 }
@@ -108,7 +108,7 @@ export async function updateSignal(formData) {
   const close = formData.get('close') === '1';
   if (close && formData.get('sure') !== '1') redirect('/admin?uerr=' + encodeURIComponent('علّم على «متأكد» لتسكّر الصفقة') + '#live');
   const { error } = await sb.rpc('staff_update_signal', {
-    p_id: Number(formData.get('id')), p_sl: close ? null : num('sl'), p_tp1: close ? null : num('tp1'), p_tp2: close ? null : num('tp2'),
+    p_id: Number(formData.get('id')), p_sl: close ? null : num('sl'), p_tp1: close ? null : num('tp1'), p_tp2: close ? null : num('tp2'), p_tp3: close ? null : num('tp3'),
     p_note: String(formData.get('note') || ''), p_close: close,
   });
   revalidatePath('/admin'); revalidatePath('/rooms');

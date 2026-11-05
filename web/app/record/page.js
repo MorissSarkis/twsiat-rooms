@@ -64,14 +64,14 @@ export default async function Record() {
         {trades.length === 0 ? <div className="card muted">لسا ما في صفقات مسكّرة.</div> : (
           <div className="card" style={{ overflowX: 'auto' }}>
             <table>
-              <thead><tr><th>تاريخ النشر</th><th>الأداة</th><th>الاتجاه</th><th>الدخول</th><th>الستوب</th><th>الهدف 1</th><th>الهدف 2</th><th>النتيجة</th><th>نص/نص</th><th>الهدف 1 بس</th></tr></thead>
+              <thead><tr><th>تاريخ النشر</th><th>الأداة</th><th>الاتجاه</th><th>الدخول</th><th>الستوب</th><th>الهدف 1</th><th>الهدف 2 · 3</th><th>النتيجة</th><th>نص/نص</th><th>الهدف 1 بس</th></tr></thead>
               <tbody>{trades.map((t) => (
                 <tr key={t.id}>
                   <td className="ltr">{when(t.published_at)}</td>
                   <td>{symName(t.symbol)}</td>
                   <td><span className={`badge ${t.side === 'BUY' ? 'buy' : 'sell'}`}>{t.side === 'BUY' ? 'شراء' : 'بيع'}</span></td>
                   <td className="ltr">{px(t.symbol, t.entry)}</td><td className="ltr">{px(t.symbol, t.stop_loss)}</td>
-                  <td className="ltr">{px(t.symbol, t.tp1)}</td><td className="ltr">{px(t.symbol, t.tp2)}</td>
+                  <td className="ltr">{px(t.symbol, t.tp1)}</td><td className="ltr">{px(t.symbol, t.tp2)}{t.tp3 != null && <> · {px(t.symbol, t.tp3)}</>}</td>
                   <td>{stateLabel(t)}</td>
                   <td className={Number(t.result_r_partial) >= 0 ? 'ok ltr' : 'bad ltr'}>{R(t.result_r_partial)}</td>
                   <td className={Number(t.result_r_tp1only) >= 0 ? 'ok ltr' : 'bad ltr'}>{R(t.result_r_tp1only)}</td>

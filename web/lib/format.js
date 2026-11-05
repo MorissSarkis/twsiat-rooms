@@ -4,13 +4,15 @@ export function lotFor(balance, riskPct, riskUsd001) {
   const lots = Math.floor(((balance * riskPct) / 100 / riskUsd001) * 0.01 * 100) / 100;
   return lots;
 }
-export const STATE_AR = { waiting: 'بانتظار التفعيل', open: 'مفتوحة', tp1: 'تحقق الهدف 1 ✅', tp2: 'تحقق الهدف 2', sl: 'ستوب لوس', be: 'خرجت على الدخول', expired: 'انتهت بدون تفعيل', closed: 'مغلقة' };
+export const STATE_AR = { waiting: 'بانتظار التفعيل', open: 'مفتوحة', tp1: 'تحقق الهدف 1 ✅', tp2: 'تحقق الهدف 2 ✅', tp3: 'تحقق الهدف 3 ✅', sl: 'ستوب لوس', be: 'خرجت على الدخول', expired: 'انتهت بدون تفعيل', closed: 'مغلقة' };
 export const ROOM_AR = { 1: 'غرفة الحسابات الصغيرة · أقل من 1,000$', 2: 'غرفة الحسابات الكبيرة · 1,000$ وأكثر' };
 export const SYMBOL_AR = { XAUUSD: 'الذهب', XAGUSD: 'الفضة', USOIL: 'نفط WTI', UKOIL: 'نفط برنت', XNGUSD: 'الغاز الطبيعي', US30: 'داو جونز', USTEC: 'ناسداك 100', US500: 'S&P 500', DE30: 'داكس', UK100: 'فوتسي 100', JP225: 'نيكاي 225', EURUSD: 'يورو / دولار', GBPUSD: 'باوند / دولار', USDJPY: 'دولار / ين', USDCHF: 'دولار / فرنك', AUDUSD: 'أسترالي / دولار', USDCAD: 'دولار / كندي', NZDUSD: 'نيوزلندي / دولار', BTCUSD: 'بيتكوين', ETHUSD: 'إيثيريوم',
   EURGBP: 'يورو / باوند', EURJPY: 'يورو / ين', EURCHF: 'يورو / فرنك', EURCAD: 'يورو / كندي', GBPJPY: 'باوند / ين', GBPCHF: 'باوند / فرنك', GBPCAD: 'باوند / كندي', GBPAUD: 'باوند / أسترالي', AUDJPY: 'أسترالي / ين', AUDCHF: 'أسترالي / فرنك', AUDCAD: 'أسترالي / كندي',
   XRPUSD: 'ريبل XRP', UNIUSD: 'يونيسواب', MSFT: 'مايكروسوفت', AMD: 'AMD', AMZN: 'أمازون', NFLX: 'نتفليكس' };
 // once TP1 is reached the signal counts as a win, whatever happens after it (TP2 still shows as TP2)
 export const stateLabel = (s) => {
+  if (s.state === 'tp2' && s.tp3 != null && !s.closed_at) return 'تحقق الهدف 2 ✅ · بانتظار الهدف 3';
+  if (s.tp2_at && ['be', 'sl', 'closed'].includes(s.state)) return STATE_AR.tp2;
   if (s.tp1_at && ['be', 'sl', 'closed'].includes(s.state)) return STATE_AR.tp1;
   if (s.state === 'closed' && s.closed_reason === 'manual') {
     const r = Number(s.result_r_partial);
