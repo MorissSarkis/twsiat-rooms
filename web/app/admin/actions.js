@@ -19,11 +19,13 @@ export async function approveSuggestion(formData) {
   if (!s || s.status !== 'pending' || rooms.length === 0) return;
   const { data: chk } = await sb.rpc('suggestion_live_check', { p_id: id });
   if (chk && !chk.ok) { revalidatePath('/admin'); return; }   // entry already reached: never publish a stale order
-  await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: String(formData.get('note') || '') }).eq('id', id);
-  await sb.from('signals').insert({
+  // publish first; mark the suggestion approved only if the signal really went out
+  const { error } = await sb.from('signals').insert({
     suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
     entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at, credit_username: s.credit_username,
   });
+  if (error) { revalidatePath('/admin'); redirect('/admin?uerr=' + encodeURIComponent('ما انتشرت: ' + error.message)); }
+  await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: String(formData.get('note') || '') }).eq('id', id);
   revalidatePath('/admin');
 }
 

@@ -30,12 +30,16 @@ export async function submitSignal(prev, formData) {
     const { data: chk } = await sb.rpc('suggestion_live_check', { p_id: id });
     if (chk && !chk.ok) return { error: 'ما انتشرت: ' + chk.reason + '. التوصية انحفظت بانتظار الموافقة.' };
     const { data: s } = await sb.from('suggestions').select('*').eq('id', id).single();
-    await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: 'نشر مباشر من مدير الحساب' }).eq('id', id);
     const { error: e2 } = await sb.from('signals').insert({
       suggestion_id: id, rooms, symbol: s.symbol, side: s.side, order_type: s.order_type,
       entry: s.entry, stop_loss: s.stop_loss, tp1: s.tp1, tp2: s.tp2, tp3: s.tp3, risk_usd_001: s.risk_usd_001, expires_at: s.expires_at,
     });
-    if (e2) return { error: 'ما قدرنا ننشر: ' + e2.message };
+    if (e2) {
+      // not published: close the draft so it doesn't look approved, the form keeps the numbers to fix and retry
+      await sb.from('suggestions').update({ status: 'rejected', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: 'ما انتشرت: ' + e2.message }).eq('id', id);
+      return { error: 'ما انتشرت: ' + e2.message };
+    }
+    await sb.from('suggestions').update({ status: 'approved', decided_by: user.id, decided_at: new Date().toISOString(), decision_note: 'نشر مباشر من مدير الحساب' }).eq('id', id);
   }
   redirect('/admin');
 }

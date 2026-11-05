@@ -1,5 +1,5 @@
 'use client';
-import { useFormState } from 'react-dom';
+import { useFormState, useFormStatus } from 'react-dom';
 import { submitSignal } from './actions';
 
 export default function NewSignalForm({ canPublish, symbols }) {
@@ -41,10 +41,20 @@ export default function NewSignalForm({ canPublish, symbols }) {
           </div>
         )}
         <div className="grid g2">
-          {canPublish && <button className="btn green" name="publish" value="1">افحص وانشر مباشرة</button>}
-          <button className={canPublish ? 'btn ghost' : 'btn'}>أرسل للفحص والموافقة</button>
+          <Buttons canPublish={canPublish} />
         </div>
       </form>
     </main>
+  );
+}
+
+// one click only: buttons lock while the server is working, so a slow publish can't be sent twice
+function Buttons({ canPublish }) {
+  const { pending } = useFormStatus();
+  return (
+    <>
+      {canPublish && <button className="btn green" name="publish" value="1" disabled={pending}>{pending ? 'جاري النشر…' : 'افحص وانشر مباشرة'}</button>}
+      <button className={canPublish ? 'btn ghost' : 'btn'} disabled={pending}>أرسل للفحص والموافقة</button>
+    </>
   );
 }
