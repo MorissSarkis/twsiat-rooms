@@ -55,6 +55,7 @@ export default async function Admin({ searchParams }) {
           <h1>الباك أوفيس</h1>
           <div className="row">
             {canDecide && <a className="btn ghost" href="/admin/members">الأعضاء</a>}
+            {canDecide && <a className="btn green" href="/admin/batch">⚡ نشر دفعة</a>}
             <a className="btn" href="/admin/new">+ توصية من المحلل</a>
           </div>
         </div>
