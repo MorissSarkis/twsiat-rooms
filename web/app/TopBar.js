@@ -15,6 +15,7 @@ export default function TopBar({ profile }) {
             <details className="more">
               <summary>المزيد ▾</summary>
               <div className="more-menu">
+                <Link href="/account">حسابي</Link>
                 <Link href="/community">غرفة المجتمع</Link>
                 <Link href="/levels">المستويات</Link>
                 <Link href="/record">سجل الأداء</Link>

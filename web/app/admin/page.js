@@ -24,7 +24,7 @@ export default async function Admin({ searchParams }) {
     ? await sb.from('signals').select('*').eq('shadow', false).or('state.in.(waiting,open,tp1),and(state.eq.tp2,closed_at.is.null)').order('published_at', { ascending: false })
     : { data: [] };
   const { data: upgrades } = canDecide
-    ? await sb.from('profiles').select('id,display_name,broker,broker_account,balance_usd,upgrade_balance,upgrade_requested_at,phone').not('upgrade_requested_at', 'is', null).order('upgrade_requested_at')
+    ? await sb.from('profiles').select('id,display_name,broker,broker_account,balance_usd,upgrade_balance,upgrade_requested_at,upgrade_note,room,phone').not('upgrade_requested_at', 'is', null).order('upgrade_requested_at')
     : { data: [] };
   // pivot alerts: crypto payments waiting + current paid subscribers
   const [{ data: pays }, { data: subs }] = canDecide ? await Promise.all([
@@ -62,13 +62,14 @@ export default async function Admin({ searchParams }) {
         {canDecide && (
           <>
             {upgrades?.length > 0 && (<>
-              <h2>طلبات الانتقال للغرفة الكبيرة <span className="badge sell">{upgrades.length}</span></h2>
+              <h2>طلبات تحديث الرصيد والانتقال للغرفة الكبيرة <span className="badge sell">{upgrades.length}</span></h2>
               {upgrades.map((u) => (
                 <div key={u.id} className="card hl grid" style={{ gap: 10 }}>
                   <div className="row" style={{ justifyContent: 'space-between' }}>
                     <div>
                       <b>{u.display_name}</b>
                       <div className="muted">{u.broker || '—'} · <span className="ltr">{u.broker_account || '—'}</span> · الرصيد المسجّل <span className="ltr">${u.balance_usd ?? '—'}</span> ← بيقول هلق <b className="ltr" style={{ color: 'var(--text)' }}>${u.upgrade_balance}</b> · {when(u.upgrade_requested_at)}</div>
+                      {u.upgrade_note && <div className="note" style={{ marginTop: 6 }}>{u.upgrade_note}</div>}
                     </div>
                     {u.phone && <a className="btn ghost" href={`https://wa.me/${u.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener"><span className="ltr">{u.phone}</span> · واتساب</a>}
                   </div>
@@ -76,11 +77,12 @@ export default async function Admin({ searchParams }) {
                     <form action={setRoom} className="row">
                       <input type="hidden" name="id" value={u.id} /><input type="hidden" name="room" value="2" />
                       <input name="balance" type="number" defaultValue={u.upgrade_balance} required style={{ width: 130 }} dir="ltr" />
-                      <button className="btn">تأكدت، انقله لغرفة 2</button>
+                      <button className="btn">{u.room === 2 ? 'تأكدت، حدّث الرصيد (غرفة 2)' : 'تأكدت، انقله لغرفة 2'}</button>
                     </form>
                     <form action={setRoom} className="row">
                       <input type="hidden" name="id" value={u.id} /><input type="hidden" name="room" value="1" />
-                      <button className="btn ghost">الرصيد مش كافي، خليه بغرفة 1</button>
+                      <input name="balance" type="number" defaultValue={u.upgrade_balance} style={{ width: 130 }} dir="ltr" />
+                      <button className="btn ghost">{u.room === 2 ? 'انقله لغرفة 1 بهالرصيد' : 'حدّث الرصيد وخليه بغرفة 1'}</button>
                     </form>
                   </div>
                 </div>
